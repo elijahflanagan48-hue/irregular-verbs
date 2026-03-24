@@ -1,0 +1,1785 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>VerbForge — Irregular Verbs</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;500;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"/>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --accent:#1D9E75;--accent-l:#E1F5EE;--accent-d:#085041;
+  --warn:#BA7517;--warn-l:#FAEEDA;
+  --err:#E24B4A;--err-l:#FCEBEB;
+  --bg:#f8f7f4;--card:#fff;--border:#e2e0d8;
+  --text:#1a1a18;--muted:#6b6a65;--hint:#a09f9a;
+  --mono:'JetBrains Mono',monospace;
+  --sans:'Syne',sans-serif;
+  --rad:14px;--rad-sm:8px;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);min-height:100vh}
+nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 1.5rem;display:flex;align-items:center;gap:1rem;height:56px;position:sticky;top:0;z-index:100}
+.nav-logo{font-weight:800;font-size:17px;letter-spacing:-.5px;white-space:nowrap}
+.nav-logo span{color:var(--accent)}
+.nav-modes{display:flex;gap:3px;flex-wrap:wrap;flex:1}
+.mode-btn{padding:5px 11px;border-radius:18px;border:1px solid transparent;font-family:var(--sans);font-size:11px;font-weight:500;cursor:pointer;background:transparent;color:var(--muted);transition:all .15s;white-space:nowrap}
+.mode-btn:hover{background:#f0efeb;color:var(--text)}
+.mode-btn.active{background:var(--accent);color:#fff}
+.nav-right{display:flex;align-items:center;gap:.75rem;margin-left:auto;flex-shrink:0}
+.nav-score{font-size:12px;color:var(--muted);font-weight:500}
+.nav-score b{color:var(--accent)}
+.nav-home-btn{background:none;border:none;cursor:pointer;font-size:18px;padding:0;line-height:1;color:var(--muted)}
+.nav-home-btn:hover{color:var(--text)}
+main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
+.screen{display:none}.screen.active{display:block}
+
+/* HOME */
+.hero{text-align:center;padding:2rem 0 1rem}
+.hero h1{font-size:38px;font-weight:800;letter-spacing:-1px;line-height:1.1;margin-bottom:.6rem}
+.hero h1 em{color:var(--accent);font-style:normal}
+.hero p{color:var(--muted);font-size:14px;margin-bottom:1.5rem}
+.theme-label{font-size:11px;color:var(--hint);font-weight:700;letter-spacing:.5px;text-transform:uppercase;margin-bottom:.5rem}
+.theme-row{display:flex;gap:.5rem;flex-wrap:wrap;justify-content:center;margin-bottom:1.75rem}
+.theme-pill{padding:7px 16px;border:1.5px solid var(--border);border-radius:20px;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;background:var(--card);color:var(--text);transition:.15s}
+.theme-pill:hover{border-color:var(--accent);color:var(--accent)}
+.theme-pill.sel{background:var(--accent);border-color:var(--accent);color:#fff}
+.mode-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.85rem}
+.mode-card{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:1.1rem;cursor:pointer;text-align:left;transition:all .2s;position:relative;overflow:hidden}
+.mode-card:hover{border-color:var(--accent);transform:translateY(-2px);box-shadow:0 6px 20px rgba(29,158,117,.1)}
+.mode-card .icon{font-size:22px;margin-bottom:.5rem;display:block}
+.mode-card h3{font-size:13px;font-weight:700;margin-bottom:.2rem}
+.mode-card p{font-size:11px;color:var(--muted);line-height:1.4}
+.mode-card .badge{position:absolute;top:9px;right:9px;font-size:9px;padding:2px 6px;border-radius:8px;font-weight:700;background:var(--accent-l);color:var(--accent-d)}
+
+/* ADAPT BADGE */
+.adapt-badge{display:inline-flex;align-items:center;gap:5px;font-size:11px;padding:4px 10px;border-radius:12px;margin-bottom:.85rem;font-weight:500}
+.adapt-badge.new{background:#E6F1FB;color:#185FA5}
+.adapt-badge.review{background:var(--warn-l);color:var(--warn)}
+.adapt-badge.known{background:var(--accent-l);color:var(--accent-d)}
+
+/* STATS / PROGRESS */
+.stats-bar{display:flex;gap:.65rem;margin-bottom:1rem;flex-wrap:wrap}
+.stat{background:var(--card);border:1px solid var(--border);border-radius:var(--rad-sm);padding:.45rem .75rem;font-size:11px;color:var(--muted);flex:1;min-width:60px;text-align:center}
+.stat b{display:block;font-size:18px;font-weight:700;color:var(--text);line-height:1.2}
+.progress-wrap{height:4px;background:var(--border);border-radius:2px;margin-bottom:1rem}
+.progress-bar{height:4px;background:var(--accent);border-radius:2px;transition:width .35s ease}
+.mastery-row{display:flex;gap:3px;margin-bottom:.85rem;flex-wrap:wrap}
+.m-dot{width:10px;height:10px;border-radius:50%;background:var(--border);transition:.3s;flex-shrink:0}
+.m-dot.done-ok{background:var(--accent)}
+.m-dot.done-bad{background:var(--err)}
+.m-dot.current{background:var(--warn);transform:scale(1.3)}
+
+/* FLASHCARD */
+.flashcard-wrap{perspective:1400px;margin:1rem auto;max-width:460px}
+.flashcard{width:100%;min-height:260px;position:relative;transform-style:preserve-3d;transition:transform .5s cubic-bezier(.4,0,.2,1);cursor:pointer}
+.flashcard.flipped{transform:rotateY(180deg)}
+.fc-face{position:absolute;inset:0;backface-visibility:hidden;border-radius:var(--rad);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:1.5rem;border:1px solid var(--border)}
+.fc-front{background:var(--card)}
+.fc-back{background:#f0faf6;transform:rotateY(180deg);border-color:var(--accent)}
+.fc-label{font-size:10px;font-weight:700;letter-spacing:1px;text-transform:uppercase;color:var(--hint);margin-bottom:.5rem}
+.fc-word{font-size:42px;font-weight:800;letter-spacing:-1.5px;margin-bottom:.2rem}
+.fc-ru{font-size:13px;color:var(--muted);text-align:center;max-width:260px;margin-bottom:.5rem}
+.fc-tap{font-size:11px;color:var(--hint);margin-top:1.25rem}
+.fc-forms{font-family:var(--mono);font-size:19px;font-weight:500;color:var(--accent-d);text-align:center;line-height:2.1}
+.fc-form-row{display:flex;align-items:center;gap:.5rem;justify-content:center}
+.fc-form-lbl{font-size:10px;color:var(--hint);font-family:var(--sans);min-width:20px;text-align:right}
+.fc-example{font-size:12px;color:var(--muted);font-style:italic;margin-top:.75rem;text-align:center;max-width:300px;line-height:1.5}
+.fc-btns{display:flex;gap:.85rem;justify-content:center;margin-top:1rem}
+.btn-know{background:var(--accent);color:#fff;border:none;padding:9px 26px;border-radius:20px;font-family:var(--sans);font-size:13px;font-weight:600;cursor:pointer;transition:.15s}
+.btn-know:hover{background:var(--accent-d)}
+.btn-skip{background:transparent;color:var(--muted);border:1px solid var(--border);padding:9px 26px;border-radius:20px;font-family:var(--sans);font-size:13px;font-weight:500;cursor:pointer;transition:.15s}
+.btn-skip:hover{background:#f0efeb}
+.fc-nav{display:flex;align-items:center;justify-content:center;gap:1.5rem;margin-top:.6rem;font-size:12px;color:var(--hint)}
+.fc-nav button{background:none;border:none;cursor:pointer;font-size:18px;color:var(--hint);padding:4px}
+.fc-nav button:hover{color:var(--text)}
+
+/* THREE FORMS */
+.tf-card{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:1.5rem;text-align:center;margin-bottom:1rem}
+.tf-verb{font-size:42px;font-weight:800;letter-spacing:-1.5px;margin-bottom:.2rem}
+.tf-trans{font-size:13px;color:var(--muted);margin-bottom:1rem}
+.tf-inputs{display:flex;gap:.65rem;justify-content:center;flex-wrap:wrap}
+.tf-iw{display:flex;flex-direction:column;align-items:center;gap:.3rem}
+.iw-lbl{font-size:10px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--hint)}
+.tf-input{width:128px;padding:8px 10px;border:1.5px solid var(--border);border-radius:var(--rad-sm);font-family:var(--mono);font-size:15px;font-weight:500;text-align:center;outline:none;transition:.2s;background:var(--bg)}
+.tf-input:focus{border-color:var(--accent);background:#fff}
+.tf-input.correct{border-color:var(--accent);background:var(--accent-l);color:var(--accent-d)}
+.tf-input.wrong{border-color:var(--err);background:var(--err-l);color:var(--err)}
+.tf-example{font-size:12px;color:var(--muted);font-style:italic;margin-top:.75rem}
+.btn-check{background:var(--accent);color:#fff;border:none;padding:10px 30px;border-radius:22px;font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;transition:.15s;margin-top:1rem}
+.btn-check:hover{background:var(--accent-d)}
+.btn-next{background:var(--text);color:#fff;border:none;padding:10px 30px;border-radius:22px;font-family:var(--sans);font-size:14px;font-weight:700;cursor:pointer;transition:.15s;margin-top:.6rem}
+.btn-next:hover{opacity:.8}
+.feedback{font-size:13px;margin-top:.75rem;font-weight:600;padding:7px 14px;border-radius:var(--rad-sm);display:inline-block}
+.feedback.ok{background:var(--accent-l);color:var(--accent-d)}
+.feedback.bad{background:var(--err-l);color:var(--err)}
+
+/* FILL IN BLANK */
+.fib-meta{font-size:11px;color:var(--hint);margin-bottom:.75rem;text-align:center}
+.fib-sentence{font-size:19px;font-weight:500;text-align:center;margin:1rem 0;line-height:1.9}
+.fib-blank{display:inline-block;min-width:110px;border-bottom:2px solid var(--accent);padding:0 4px;font-family:var(--mono);font-size:19px;font-weight:600;color:var(--accent-d);vertical-align:bottom}
+.fib-choices{display:flex;gap:.5rem;justify-content:center;flex-wrap:wrap;margin:.75rem 0}
+.fib-choice{padding:7px 15px;border:1px solid var(--border);border-radius:18px;font-family:var(--mono);font-size:13px;cursor:pointer;transition:.15s;background:var(--card)}
+.fib-choice:hover{border-color:var(--accent);color:var(--accent)}
+.fib-choice.sel-ok{background:var(--accent-l);border-color:var(--accent);color:var(--accent-d);font-weight:600}
+.fib-choice.sel-bad{background:var(--err-l);border-color:var(--err);color:var(--err)}
+.fib-choice.reveal-ok{background:var(--accent-l);border-color:var(--accent);color:var(--accent-d)}
+
+/* SPEED */
+.speed-timer{font-size:56px;font-weight:800;letter-spacing:-2px;line-height:1;font-family:var(--mono)}
+.speed-timer.urgent{color:var(--err);animation:pulse .5s ease infinite alternate}
+@keyframes pulse{to{transform:scale(1.06)}}
+@keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
+.speed-verb-big{font-size:40px;font-weight:800;letter-spacing:-1px;margin:1rem 0 .25rem}
+.speed-trans{font-size:13px;color:var(--muted);margin-bottom:1rem}
+.speed-fields{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap}
+.speed-input{width:118px;padding:8px;border:2px solid var(--border);border-radius:var(--rad-sm);font-family:var(--mono);font-size:14px;text-align:center;outline:none;transition:.2s;background:var(--bg)}
+.speed-input:focus{border-color:var(--accent);background:#fff}
+.speed-input.correct{border-color:var(--accent);background:var(--accent-l)}
+.speed-input.wrong{border-color:var(--err);background:var(--err-l)}
+.speed-score-big{font-size:68px;font-weight:800;letter-spacing:-3px;color:var(--accent)}
+
+/* SORTING */
+.sort-pool{display:flex;flex-wrap:wrap;gap:.4rem;margin-bottom:1rem;min-height:44px}
+.sort-chip{padding:5px 12px;background:var(--card);border:1px solid var(--border);border-radius:18px;font-family:var(--mono);font-size:13px;font-weight:500;cursor:grab;user-select:none;transition:.15s}
+.sort-chip:hover{border-color:var(--accent);color:var(--accent)}
+.sort-chip.placed{opacity:.3;cursor:default;pointer-events:none}
+.sort-patterns{display:grid;grid-template-columns:1fr 1fr;gap:.75rem}
+.sort-bucket{background:var(--card);border:2px dashed var(--border);border-radius:var(--rad);padding:.85rem;min-height:100px;transition:.2s}
+.sort-bucket.drag-over{border-color:var(--accent);background:var(--accent-l)}
+.sort-bucket h4{font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--hint);margin-bottom:.5rem}
+.sort-bucket h4 b{color:var(--accent-d);font-family:var(--mono)}
+.bucket-chips{display:flex;flex-wrap:wrap;gap:.3rem}
+.bucket-chip{padding:3px 9px;border-radius:12px;font-size:12px;font-family:var(--mono);cursor:pointer;border:1px solid var(--border);background:var(--bg);transition:.15s}
+.bucket-chip:hover{background:var(--err-l);border-color:var(--err)}
+.bucket-chip.ok{background:var(--accent-l);border-color:var(--accent);color:var(--accent-d)}
+.bucket-chip.bad{background:var(--err-l);border-color:var(--err);color:var(--err)}
+
+/* LISTENING */
+.listen-btn{width:82px;height:82px;border-radius:50%;background:var(--accent);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;margin:.85rem auto;transition:.3s}
+.listen-btn:hover{transform:scale(1.05)}
+.listen-btn.playing{animation:ripple 1.2s ease infinite}
+@keyframes ripple{0%{box-shadow:0 0 0 0 rgba(29,158,117,.35)}100%{box-shadow:0 0 0 22px rgba(29,158,117,0)}}
+.listen-btn svg{width:30px;height:30px;fill:#fff}
+.listen-count{font-size:12px;color:var(--hint);text-align:center}
+.listen-forms{display:flex;gap:.6rem;justify-content:center;flex-wrap:wrap;margin-top:.75rem}
+.listen-input{width:128px;padding:8px;border:1.5px solid var(--border);border-radius:var(--rad-sm);font-family:var(--mono);font-size:14px;text-align:center;outline:none;background:var(--bg);transition:.2s}
+.listen-input:focus{border-color:var(--accent);background:#fff}
+.listen-input.correct{border-color:var(--accent);background:var(--accent-l);color:var(--accent-d)}
+.listen-input.wrong{border-color:var(--err);background:var(--err-l);color:var(--err)}
+
+/* PROGRESS */
+.prog-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:.45rem;margin-top:.85rem}
+.prog-item{background:var(--card);border:1px solid var(--border);border-radius:var(--rad-sm);padding:.55rem .8rem;font-size:13px;font-weight:600;display:flex;align-items:center;justify-content:space-between;cursor:default}
+.prog-item .verb{font-family:var(--mono)}
+.prog-item .dots{font-size:10px;letter-spacing:1px;color:var(--hint)}
+.prog-item.lv0{border-left:3px solid var(--border)}
+.prog-item.lv1{border-left:3px solid var(--warn)}
+.prog-item.lv2{border-left:3px solid #378ADD}
+.prog-item.lv3{border-left:3px solid var(--accent)}
+.prog-item.lv4{border-left:3px solid var(--accent-d)}
+
+/* ── PRACTICE ── */
+.pr-type-grid{display:grid;grid-template-columns:1fr 1fr;gap:.65rem}
+.pr-type-btn{background:var(--card);border:1.5px solid var(--border);border-radius:var(--rad);padding:.9rem 1rem;cursor:pointer;text-align:left;font-family:var(--sans);transition:.15s;display:flex;flex-direction:column;gap:.3rem}
+.pr-type-btn:hover{border-color:var(--accent)}
+.pr-type-btn.sel{border-color:var(--accent);background:var(--accent-l)}
+.pr-type-btn span{font-size:20px}
+.pr-type-btn b{font-size:13px;font-weight:700;color:var(--text)}
+.pr-type-btn small{font-size:11px;color:var(--muted);line-height:1.4}
+.pr-type-btn.sel b{color:var(--accent-d)}
+.pr-spinner{width:40px;height:40px;border:3px solid var(--border);border-top-color:var(--accent);border-radius:50%;animation:spin .8s linear infinite;margin:0 auto}
+@keyframes spin{to{transform:rotate(360deg)}}
+.pr-ex-type-badge{font-size:11px;font-weight:700;padding:3px 10px;border-radius:10px;background:var(--accent-l);color:var(--accent-d)}
+
+/* story gap-fill */
+.pr-story{font-size:16px;line-height:2;color:var(--text);background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:1.5rem 1.75rem}
+.pr-story p{margin-bottom:.85rem}
+.pr-story p:last-child{margin-bottom:0}
+.gap-wrap{display:inline-flex;flex-direction:column;align-items:center;vertical-align:bottom;margin:0 3px}
+.gap-input{width:110px;padding:2px 6px;border:none;border-bottom:2px solid var(--accent);font-family:var(--mono);font-size:15px;font-weight:600;text-align:center;outline:none;background:transparent;color:var(--text);transition:.2s}
+.gap-input:focus{background:var(--accent-l);border-radius:4px 4px 0 0}
+.gap-input.ok{border-color:var(--accent);color:var(--accent-d);background:var(--accent-l);border-radius:4px;border:1.5px solid var(--accent)}
+.gap-input.bad{border-color:var(--err);color:var(--err);background:var(--err-l);border-radius:4px;border:1.5px solid var(--err)}
+.gap-hint{font-size:9px;color:var(--hint);font-family:var(--sans);margin-top:1px}
+.gap-choice-row{display:inline-flex;gap:4px;margin:0 3px;vertical-align:bottom}
+.gap-pill{padding:3px 10px;border:1px solid var(--border);border-radius:14px;font-family:var(--mono);font-size:13px;cursor:pointer;background:var(--bg);transition:.15s;line-height:1.6}
+.gap-pill:hover{border-color:var(--accent);color:var(--accent)}
+.gap-pill.chosen-ok{background:var(--accent-l);border-color:var(--accent);color:var(--accent-d);font-weight:600}
+.gap-pill.chosen-bad{background:var(--err-l);border-color:var(--err);color:var(--err)}
+.gap-pill.reveal{background:var(--accent-l);border-color:var(--accent);color:var(--accent-d)}
+
+/* dialogue repair */
+.pr-dialogue{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:1.5rem;display:flex;flex-direction:column;gap:.85rem}
+.dl-line{display:flex;gap:.75rem;align-items:flex-start}
+.dl-speaker{font-size:11px;font-weight:700;color:var(--hint);min-width:56px;padding-top:3px;text-transform:uppercase;letter-spacing:.5px}
+.dl-text{font-size:15px;line-height:1.7;flex:1}
+.dl-error{cursor:pointer;border-bottom:2px dashed var(--err);color:var(--err);font-weight:600;padding:0 2px;transition:.2s}
+.dl-error:hover{background:var(--err-l);border-radius:3px}
+.dl-error.fixed{border-bottom:2px solid var(--accent);color:var(--accent-d);background:var(--accent-l);border-radius:3px;cursor:default}
+.dl-error.missed{background:var(--err-l);border-radius:3px}
+.dl-error.wrong-try{border-bottom:2px dashed var(--err);color:var(--err);animation:shake .3s ease}
+
+/* sentence builder */
+.pr-builder-area{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:1.5rem}
+.sb-target{min-height:52px;border:2px dashed var(--border);border-radius:var(--rad-sm);padding:.65rem 1rem;display:flex;flex-wrap:wrap;gap:.4rem;align-items:center;margin-bottom:1.1rem;transition:.2s;font-size:15px;line-height:1.8}
+.sb-target.drag-over{border-color:var(--accent);background:var(--accent-l)}
+.sb-pool{display:flex;flex-wrap:wrap;gap:.45rem}
+.sb-word{padding:6px 13px;background:var(--bg);border:1px solid var(--border);border-radius:16px;font-family:var(--mono);font-size:13px;cursor:grab;user-select:none;transition:.15s}
+.sb-word:hover{border-color:var(--accent);color:var(--accent)}
+.sb-word.placed{opacity:.3;pointer-events:none}
+.sb-word.in-target{cursor:pointer;background:var(--card);border-color:var(--border)}
+.sb-word.in-target:hover{background:var(--err-l);border-color:var(--err)}
+.sb-ru{font-size:13px;color:var(--muted);margin-bottom:.85rem;font-style:italic}
+
+/* translation */
+.pr-translate-card{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:1.5rem;margin-bottom:.85rem}
+.tr-ru-sentence{font-size:18px;font-weight:600;margin-bottom:.85rem;line-height:1.6}
+.tr-input{width:100%;padding:10px 14px;border:1.5px solid var(--border);border-radius:var(--rad-sm);font-family:var(--sans);font-size:15px;outline:none;background:var(--bg);transition:.2s;resize:none}
+.tr-input:focus{border-color:var(--accent);background:#fff}
+.tr-input.ok{border-color:var(--accent);background:var(--accent-l)}
+.tr-input.bad{border-color:var(--err);background:var(--err-l)}
+.tr-hint{font-size:12px;color:var(--hint);margin-top:.4rem}
+.tr-answer{font-size:13px;margin-top:.6rem;padding:7px 12px;border-radius:var(--rad-sm);background:var(--accent-l);color:var(--accent-d);font-weight:500;display:none}
+
+/* context chooser */
+.pr-chooser{display:flex;flex-direction:column;gap:.75rem}
+.ch-verb-big{text-align:center;font-size:36px;font-weight:800;letter-spacing:-1px;margin-bottom:.25rem}
+.ch-verb-ru{text-align:center;font-size:13px;color:var(--muted);margin-bottom:1.25rem}
+.ch-option{background:var(--card);border:1.5px solid var(--border);border-radius:var(--rad);padding:1rem 1.25rem;cursor:pointer;font-size:15px;line-height:1.7;transition:.2s;position:relative}
+.ch-option:hover{border-color:var(--accent)}
+.ch-option.sel-ok{border-color:var(--accent);background:var(--accent-l)}
+.ch-option.sel-bad{border-color:var(--err);background:var(--err-l)}
+.ch-option.reveal-ok{border-color:var(--accent);background:var(--accent-l)}
+.ch-label{position:absolute;top:10px;right:12px;font-size:10px;font-weight:700;padding:2px 8px;border-radius:8px}
+
+/* detective */
+.pr-detective{font-size:16px;line-height:2.1;background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:1.5rem 1.75rem}
+.pr-detective p{margin-bottom:.85rem}
+.dt-span{cursor:pointer;border-bottom:1px dotted var(--hint);padding:0 2px;transition:.2s;border-radius:2px}
+.dt-span:hover{background:#f0efeb}
+.dt-span.flagged{background:var(--warn-l);border-bottom:2px solid var(--warn);color:var(--warn);font-weight:600;border-radius:3px}
+.dt-span.correct-flag{background:var(--accent-l);border-bottom:2px solid var(--accent);color:var(--accent-d);font-weight:600;border-radius:3px}
+.dt-span.missed-flag{background:var(--err-l);border-bottom:2px solid var(--err);color:var(--err);font-weight:600;border-radius:3px}
+.dt-instructions{font-size:12px;color:var(--muted);margin-bottom:.85rem;padding:.6rem 1rem;background:var(--warn-l);border-radius:var(--rad-sm);border:1px solid #f0c070}
+
+/* result box */
+.pr-result-box{background:var(--card);border:1px solid var(--border);border-radius:var(--rad);padding:1.25rem 1.5rem}
+.pr-result-box.all-ok{border-color:var(--accent);background:var(--accent-l)}
+.pr-result-box.partial{border-color:var(--warn);background:var(--warn-l)}
+.pr-result-box.poor{border-color:var(--err);background:var(--err-l)}
+.pr-result-score{font-size:28px;font-weight:800;margin-bottom:.25rem}
+.pr-result-msg{font-size:14px;font-weight:600}
+.pr-result-detail{font-size:12px;color:var(--muted);margin-top:.4rem}
+
+@media(max-width:540px){
+  .pr-type-grid{grid-template-columns:1fr}
+}
+
+.mt1{margin-top:.75rem}.mt2{margin-top:1.5rem}
+.hidden{display:none!important}
+.lbl{font-size:10px;font-weight:700;letter-spacing:.4px;text-transform:uppercase;color:var(--hint);font-family:var(--sans)}
+
+@media(max-width:580px){
+  .mode-grid{grid-template-columns:1fr 1fr}
+  .sort-patterns{grid-template-columns:1fr}
+  .tf-inputs{gap:.5rem}
+  .tf-input{width:108px}
+}
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-logo">Verb<span>Forge</span></div>
+  <div class="nav-modes hidden" id="navModes">
+    <button class="mode-btn" onclick="startMode('flashcard')">🃏 Flashcards</button>
+    <button class="mode-btn" onclick="startMode('threeforms')">✏️ Three Forms</button>
+    <button class="mode-btn" onclick="startMode('fillin')">📝 Fill in Blank</button>
+    <button class="mode-btn" onclick="startMode('speed')">⚡ Speed</button>
+    <button class="mode-btn" onclick="startMode('sorting')">🗂️ Sorting</button>
+    <button class="mode-btn" onclick="startMode('listening')">🎧 Listening</button>
+    <button class="mode-btn" onclick="startMode('practice')">🎯 Practice</button>
+    <button class="mode-btn" onclick="startMode('progress')">📊 Progress</button>
+  </div>
+  <div class="nav-right">
+    <div class="nav-score hidden" id="navScore">Score <b id="scoreVal">0</b></div>
+    <button class="nav-home-btn hidden" id="navHomeBtn" onclick="goHome()">⌂</button>
+  </div>
+</nav>
+
+<main>
+
+<!-- HOME -->
+<div class="screen active" id="screen-home">
+  <div class="hero">
+    <h1>Master <em>Irregular</em><br>Verbs in English</h1>
+    <p>The app tracks your mistakes and brings weak verbs back more often</p>
+    <div class="theme-label">Focus on a topic (optional)</div>
+    <div class="theme-row" id="themeRow">
+      <button class="theme-pill sel" data-theme="all" onclick="selectTheme(this)">🎲 All verbs</button>
+      <button class="theme-pill" data-theme="movement" onclick="selectTheme(this)">🏃 Movement</button>
+      <button class="theme-pill" data-theme="senses" onclick="selectTheme(this)">👁️ Senses & Mind</button>
+      <button class="theme-pill" data-theme="speech" onclick="selectTheme(this)">💬 Speech</button>
+      <button class="theme-pill" data-theme="creation" onclick="selectTheme(this)">🛠️ Making & Action</button>
+      <button class="theme-pill" data-theme="everyday" onclick="selectTheme(this)">🏠 Everyday Life</button>
+    </div>
+    <div class="mode-grid">
+      <div class="mode-card" onclick="startMode('flashcard')">
+        <span class="icon">🃏</span><h3>Flashcards</h3>
+        <p>Flip cards. Rate yourself — weak ones come back.</p>
+        <div class="badge">Classic</div>
+      </div>
+      <div class="mode-card" onclick="startMode('threeforms')">
+        <span class="icon">✏️</span><h3>Three Forms</h3>
+        <p>Type V1 → V2 → V3 from memory.</p>
+        <div class="badge">Typing</div>
+      </div>
+      <div class="mode-card" onclick="startMode('fillin')">
+        <span class="icon">📝</span><h3>Fill in Blank</h3>
+        <p>Choose the right form in a real sentence.</p>
+        <div class="badge">Context</div>
+      </div>
+      <div class="mode-card" onclick="startMode('speed')">
+        <span class="icon">⚡</span><h3>Speed</h3>
+        <p>10 seconds per verb. Race the clock!</p>
+        <div class="badge">Timed</div>
+      </div>
+      <div class="mode-card" onclick="startMode('sorting')">
+        <span class="icon">🗂️</span><h3>Sorting</h3>
+        <p>Drag verbs into pattern groups.</p>
+        <div class="badge">Groups</div>
+      </div>
+      <div class="mode-card" onclick="startMode('listening')">
+        <span class="icon">🎧</span><h3>Listening</h3>
+        <p>Hear the verb, write all three forms.</p>
+        <div class="badge">Audio</div>
+      </div>
+      <div class="mode-card" onclick="startMode('practice')" style="border-color:var(--accent);grid-column:1/-1;background:linear-gradient(135deg,var(--accent-l),#fff);display:flex;align-items:center;gap:1.25rem;padding:1.25rem 1.5rem">
+        <span style="font-size:36px;flex-shrink:0">🎯</span>
+        <div>
+          <h3 style="font-size:15px;margin-bottom:.3rem">Real-World Practice <span style="font-size:10px;background:var(--accent);color:#fff;padding:2px 8px;border-radius:8px;font-weight:700;vertical-align:middle;margin-left:6px">AI-powered</span></h3>
+          <p style="font-size:12px;color:var(--muted)">AI generates fresh stories, dialogues & news every session. Gap-fill, repair errors, build sentences, translate — all in rich real context.</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- FLASHCARD -->
+<div class="screen" id="screen-flashcard">
+  <div class="stats-bar">
+    <div class="stat"><b id="fc-progress">0/20</b>Cards</div>
+    <div class="stat"><b id="fc-known">0</b>Known</div>
+    <div class="stat"><b id="fc-unknown">0</b>Review</div>
+    <div class="stat"><b id="fc-streak">0</b>Streak</div>
+  </div>
+  <div class="mastery-row" id="fc-dots"></div>
+  <div id="fc-adapt-badge" class="adapt-badge new">⭐ New verb</div>
+  <div class="flashcard-wrap">
+    <div class="flashcard" id="flashcard" onclick="flipCard()">
+      <div class="fc-face fc-front">
+        <div class="fc-label">Infinitive</div>
+        <div class="fc-word" id="fc-v1">—</div>
+        <div class="fc-ru" id="fc-ru">—</div>
+        <div class="fc-tap">tap to reveal ↓</div>
+      </div>
+      <div class="fc-face fc-back">
+        <div class="fc-label">Three forms</div>
+        <div class="fc-forms">
+          <div class="fc-form-row"><span class="fc-form-lbl">V1</span><span id="fc-b1">—</span></div>
+          <div class="fc-form-row"><span class="fc-form-lbl">V2</span><span id="fc-b2">—</span></div>
+          <div class="fc-form-row"><span class="fc-form-lbl">V3</span><span id="fc-b3">—</span></div>
+        </div>
+        <div class="fc-example" id="fc-example">—</div>
+      </div>
+    </div>
+  </div>
+  <div class="fc-btns hidden" id="fc-btns">
+    <button class="btn-skip" onclick="fcRate(false)">Still learning</button>
+    <button class="btn-know" onclick="fcRate(true)">Got it ✓</button>
+  </div>
+  <div class="fc-nav">
+    <button onclick="fcPrev()">←</button>
+    <span id="fc-nav-label">1 / 20</span>
+    <button onclick="fcNextBtn()">→</button>
+  </div>
+</div>
+
+<!-- THREE FORMS -->
+<div class="screen" id="screen-threeforms">
+  <div class="stats-bar">
+    <div class="stat"><b id="tf-progress">0/20</b>Done</div>
+    <div class="stat"><b id="tf-correct">0</b>Correct</div>
+    <div class="stat"><b id="tf-pct">—</b>Accuracy</div>
+  </div>
+  <div class="mastery-row" id="tf-dots"></div>
+  <div id="tf-adapt-badge" class="adapt-badge new">⭐ New verb</div>
+  <div class="tf-card">
+    <div class="tf-verb" id="tf-verb">—</div>
+    <div class="tf-trans" id="tf-trans">—</div>
+    <div class="tf-inputs">
+      <div class="tf-iw"><div class="iw-lbl">V1 — Base</div><input class="tf-input" id="tf-v1" placeholder="base form" onkeydown="tfKey(event)"/></div>
+      <div class="tf-iw"><div class="iw-lbl">V2 — Past Simple</div><input class="tf-input" id="tf-v2" placeholder="past simple" onkeydown="tfKey(event)"/></div>
+      <div class="tf-iw"><div class="iw-lbl">V3 — Past Participle</div><input class="tf-input" id="tf-v3" placeholder="past participle" onkeydown="tfKey(event)"/></div>
+    </div>
+    <div id="tf-feedback" class="hidden"></div>
+    <div class="tf-example hidden" id="tf-ex-wrap">Example: <span id="tf-ex"></span></div>
+    <br>
+    <button class="btn-check" id="tf-check-btn" onclick="tfCheck()">Check →</button>
+    <button class="btn-next hidden" id="tf-next-btn" onclick="tfNext()">Next →</button>
+  </div>
+</div>
+
+<!-- FILL IN BLANK -->
+<div class="screen" id="screen-fillin">
+  <div class="stats-bar">
+    <div class="stat"><b id="fib-progress">0/20</b>Done</div>
+    <div class="stat"><b id="fib-correct">0</b>Correct</div>
+    <div class="stat"><b id="fib-pct">—</b>Accuracy</div>
+  </div>
+  <div class="mastery-row" id="fib-dots"></div>
+  <div id="fib-adapt-badge" class="adapt-badge new">⭐ New verb</div>
+  <div class="tf-card">
+    <div class="fib-meta" id="fib-meta"></div>
+    <div class="fib-sentence" id="fib-sentence"></div>
+    <div class="fib-choices" id="fib-choices"></div>
+    <div id="fib-feedback" class="hidden"></div>
+    <button class="btn-next hidden" id="fib-next-btn" onclick="fibNext()">Next →</button>
+  </div>
+</div>
+
+<!-- SPEED -->
+<div class="screen" id="screen-speed">
+  <div class="stats-bar">
+    <div class="stat"><b id="sp-score">0</b>Score</div>
+    <div class="stat"><b id="sp-streak">0</b>Streak</div>
+    <div class="stat"><b id="sp-best">0</b>Best</div>
+  </div>
+  <div class="tf-card center">
+    <div id="sp-ready">
+      <div style="font-size:40px;margin-bottom:.65rem">⚡</div>
+      <h2 style="font-size:20px;font-weight:800;margin-bottom:.35rem">Speed Challenge</h2>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:1rem">10 sec per verb · fast answer = bonus!<br>Harder verbs appear more often.</p>
+      <button class="btn-check" onclick="spStart()">Start!</button>
+    </div>
+    <div id="sp-game" class="hidden">
+      <div class="speed-timer" id="sp-timer">10</div>
+      <div class="speed-verb-big" id="sp-verb">—</div>
+      <div class="speed-trans" id="sp-trans">—</div>
+      <div class="speed-fields">
+        <div><div class="lbl" style="margin-bottom:3px">V1</div><input class="speed-input" id="sp-v1" placeholder="base" onkeydown="spKey(event)"/></div>
+        <div><div class="lbl" style="margin-bottom:3px">V2</div><input class="speed-input" id="sp-v2" placeholder="past" onkeydown="spKey(event)"/></div>
+        <div><div class="lbl" style="margin-bottom:3px">V3</div><input class="speed-input" id="sp-v3" placeholder="pp" onkeydown="spKey(event)"/></div>
+      </div>
+      <div id="sp-fb" style="min-height:24px;margin-top:.6rem;font-size:13px;font-weight:600"></div>
+      <button class="btn-check" style="margin-top:.75rem" onclick="spCheck()">Submit ↵</button>
+    </div>
+    <div id="sp-over" class="hidden">
+      <div style="font-size:14px;color:var(--muted);margin-bottom:.35rem">Final Score</div>
+      <div class="speed-score-big" id="sp-final">0</div>
+      <div style="font-size:13px;color:var(--muted);margin-top:.25rem" id="sp-rec"></div><br>
+      <button class="btn-check" onclick="spStart()">Play again</button>
+      <button class="btn-next" onclick="goHome()" style="margin-left:.5rem">Home</button>
+    </div>
+  </div>
+</div>
+
+<!-- SORTING -->
+<div class="screen" id="screen-sorting">
+  <div class="stats-bar">
+    <div class="stat"><b id="sort-placed">0</b>Placed</div>
+    <div class="stat"><b id="sort-correct">0</b>Correct</div>
+    <div class="stat"><b id="sort-pct">—</b>Score</div>
+  </div>
+  <p style="font-size:13px;color:var(--muted);margin-bottom:.85rem">Drag each verb to its pattern. Click a placed chip to return it.</p>
+  <div class="sort-pool" id="sort-pool"></div>
+  <div class="sort-patterns">
+    <div class="sort-bucket" id="bucket-AAA" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="sortDrop(event,'AAA')">
+      <h4>A – A – A <b>(no change)</b></h4><div class="bucket-chips" id="placed-AAA"></div>
+    </div>
+    <div class="sort-bucket" id="bucket-ABB" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="sortDrop(event,'ABB')">
+      <h4>A – B – B <b>(V2 = V3)</b></h4><div class="bucket-chips" id="placed-ABB"></div>
+    </div>
+    <div class="sort-bucket" id="bucket-ABC" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="sortDrop(event,'ABC')">
+      <h4>A – B – C <b>(all different)</b></h4><div class="bucket-chips" id="placed-ABC"></div>
+    </div>
+    <div class="sort-bucket" id="bucket-ABA" ondragover="event.preventDefault();this.classList.add('drag-over')" ondragleave="this.classList.remove('drag-over')" ondrop="sortDrop(event,'ABA')">
+      <h4>A – B – A <b>(V1 = V3)</b></h4><div class="bucket-chips" id="placed-ABA"></div>
+    </div>
+  </div>
+  <div class="center mt2">
+    <button class="btn-check" onclick="sortCheck()">Check answers</button>
+    <button class="btn-next" onclick="startMode('sorting')" style="margin-left:.65rem">New set</button>
+  </div>
+  <div id="sort-result" class="hidden mt2 center" style="font-size:14px;font-weight:600"></div>
+</div>
+
+<!-- LISTENING -->
+<div class="screen" id="screen-listening">
+  <div class="stats-bar">
+    <div class="stat"><b id="li-progress">0/20</b>Done</div>
+    <div class="stat"><b id="li-correct">0</b>Correct</div>
+    <div class="stat"><b id="li-pct">—</b>Accuracy</div>
+  </div>
+  <div class="mastery-row" id="li-dots"></div>
+  <div id="li-adapt-badge" class="adapt-badge new">⭐ New verb</div>
+  <div class="tf-card center">
+    <p style="color:var(--muted);font-size:13px">Listen, then type all three forms</p>
+    <div class="listen-count" id="li-count">Press play to start</div>
+    <button class="listen-btn" id="li-play-btn" onclick="liPlay()">
+      <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    </button>
+    <div class="listen-forms">
+      <div><div class="lbl" style="margin-bottom:3px">V1</div><input class="listen-input" id="li-v1" placeholder="base form" onkeydown="liKey(event)"/></div>
+      <div><div class="lbl" style="margin-bottom:3px">V2</div><input class="listen-input" id="li-v2" placeholder="past simple" onkeydown="liKey(event)"/></div>
+      <div><div class="lbl" style="margin-bottom:3px">V3</div><input class="listen-input" id="li-v3" placeholder="past participle" onkeydown="liKey(event)"/></div>
+    </div>
+    <div id="li-feedback" class="hidden mt1"></div>
+    <div class="tf-example hidden mt1" id="li-ex-wrap">Example: <span id="li-ex"></span></div><br>
+    <button class="btn-check" id="li-check-btn" onclick="liCheck()">Check →</button>
+    <button class="btn-next hidden" id="li-next-btn" onclick="liNext()">Next →</button>
+  </div>
+</div>
+
+<!-- PROGRESS -->
+<div class="screen" id="screen-progress">
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.85rem;flex-wrap:wrap;gap:.5rem">
+    <div>
+      <h2 style="font-size:20px;font-weight:800;letter-spacing:-.5px">Your Progress</h2>
+      <p style="font-size:13px;color:var(--muted)" id="prog-summary">—</p>
+    </div>
+    <button class="btn-next" onclick="if(confirm('Reset all progress?'))resetProgress()" style="font-size:12px;padding:6px 14px">Reset all</button>
+  </div>
+  <div style="display:flex;gap:.65rem;flex-wrap:wrap;margin-bottom:.85rem;font-size:11px;color:var(--muted)">
+    <span style="border-left:3px solid var(--border);padding-left:5px">Not seen</span>
+    <span style="border-left:3px solid var(--warn);padding-left:5px">Learning</span>
+    <span style="border-left:3px solid #378ADD;padding-left:5px">Getting there</span>
+    <span style="border-left:3px solid var(--accent);padding-left:5px">Known</span>
+    <span style="border-left:3px solid var(--accent-d);padding-left:5px">Mastered</span>
+  </div>
+  <div class="prog-grid" id="prog-grid"></div>
+</div>
+
+<!-- PRACTICE -->
+<div class="screen" id="screen-practice">
+  <div id="pr-lobby">
+    <div style="margin-bottom:1.5rem">
+      <h2 style="font-size:22px;font-weight:800;letter-spacing:-.5px;margin-bottom:.35rem">&#x1F3AF; Real-World Practice</h2>
+      <p style="font-size:13px;color:var(--muted)">Rich stories, dialogues and news — fresh content every session. Your weak verbs appear most often.</p>
+    </div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--hint);margin-bottom:.65rem">Choose exercise type</div>
+    <div class="pr-type-grid" id="prTypeGrid">
+      <button class="pr-type-btn sel" data-type="gap" onclick="prSelectType(this)">
+        <span>&#x1F4D6;</span><b>Story Gap-fill</b>
+        <small>A vivid story with blanks &mdash; choose the right verb form</small>
+      </button>
+      <button class="pr-type-btn" data-type="dialogue" onclick="prSelectType(this)">
+        <span>&#x1F4AC;</span><b>Dialogue Repair</b>
+        <small>Find and fix all verb errors in a conversation</small>
+      </button>
+      <button class="pr-type-btn" data-type="builder" onclick="prSelectType(this)">
+        <span>&#x1F527;</span><b>Sentence Builder</b>
+        <small>Scrambled words &mdash; tap them into the right order</small>
+      </button>
+      <button class="pr-type-btn" data-type="translate" onclick="prSelectType(this)">
+        <span>&#x1F310;</span><b>Translation</b>
+        <small>Russian sentences &mdash; write the English version</small>
+      </button>
+      <button class="pr-type-btn" data-type="chooser" onclick="prSelectType(this)">
+        <span>&#x1F3AF;</span><b>Context Chooser</b>
+        <small>Three contexts &mdash; only one uses the verb correctly</small>
+      </button>
+      <button class="pr-type-btn" data-type="detective" onclick="prSelectType(this)">
+        <span>&#x1F50D;</span><b>Tense Detective</b>
+        <small>A longer text with hidden tense errors &mdash; find them all</small>
+      </button>
+    </div>
+    <button class="btn-check" style="margin-top:1.5rem;width:100%;font-size:15px;padding:13px" onclick="prLaunch()">Start Exercise &#x2192;</button>
+  </div>
+
+  <div id="pr-exercise" class="hidden">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:1rem;flex-wrap:wrap;gap:.5rem">
+      <span class="pr-ex-type-badge" id="pr-ex-badge">Gap-fill</span>
+      <div style="display:flex;gap:.5rem">
+        <button class="btn-skip" style="font-size:12px;padding:6px 14px" onclick="prCheckAll()">Check answers</button>
+        <button class="btn-check" style="font-size:12px;padding:6px 14px;margin-top:0" onclick="prLaunch()">New &#x21BA;</button>
+      </div>
+    </div>
+    <div id="pr-content"></div>
+    <div id="pr-result" class="hidden" style="margin-top:1.25rem"></div>
+    <div style="display:flex;gap:.75rem;margin-top:1.25rem;flex-wrap:wrap" id="pr-action-btns" class="hidden">
+      <button class="btn-know" onclick="prLaunch()">Another one &#x2192;</button>
+      <button class="btn-skip" onclick="prBackToLobby()">Change type</button>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+const VERBS=[
+  {v1:"be",v2:"was/were",v3:"been",ru:"быть, являться",p:"ABC",theme:"everyday",ex:["She {was} very happy yesterday.","He has {been} a teacher for years."]},
+  {v1:"beat",v2:"beat",v3:"beaten",ru:"бить, побеждать",p:"ABC",theme:"creation",ex:["We {beat} them 3–0 last night.","The record was {beaten} by a newcomer."]},
+  {v1:"become",v2:"became",v3:"become",ru:"становиться",p:"ABA",theme:"senses",ex:["She {became} a doctor at 30.","It has {become} a tradition."]},
+  {v1:"begin",v2:"began",v3:"begun",ru:"начинать",p:"ABC",theme:"everyday",ex:["The film {began} at 7 pm.","I have {begun} a new project."]},
+  {v1:"bend",v2:"bent",v3:"bent",ru:"гнуть, сгибать",p:"ABB",theme:"creation",ex:["He {bent} the metal wire.","The pipe was {bent} by pressure."]},
+  {v1:"bet",v2:"bet",v3:"bet",ru:"держать пари",p:"AAA",theme:"everyday",ex:["I {bet} five dollars on the race.","He has {bet} everything on it."]},
+  {v1:"bite",v2:"bit",v3:"bitten",ru:"кусать",p:"ABC",theme:"everyday",ex:["The dog {bit} my hand.","She has been {bitten} by a spider."]},
+  {v1:"blow",v2:"blew",v3:"blown",ru:"дуть, выдыхать",p:"ABC",theme:"movement",ex:["The wind {blew} all night.","The candle was {blown} out."]},
+  {v1:"break",v2:"broke",v3:"broken",ru:"ломать, разбивать",p:"ABC",theme:"creation",ex:["He {broke} the window by accident.","The vase has been {broken}."]},
+  {v1:"bring",v2:"brought",v3:"brought",ru:"приносить, доставлять",p:"ABB",theme:"movement",ex:["She {brought} flowers to the party.","I've {brought} you some coffee."]},
+  {v1:"build",v2:"built",v3:"built",ru:"строить, сооружать",p:"ABB",theme:"creation",ex:["They {built} the house in six months.","This bridge was {built} in 1902."]},
+  {v1:"buy",v2:"bought",v3:"bought",ru:"покупать",p:"ABB",theme:"everyday",ex:["I {bought} a new laptop yesterday.","He has {bought} too many books."]},
+  {v1:"catch",v2:"caught",v3:"caught",ru:"ловить, схватить",p:"ABB",theme:"movement",ex:["She {caught} the ball easily.","The thief was {caught} immediately."]},
+  {v1:"choose",v2:"chose",v3:"chosen",ru:"выбирать",p:"ABC",theme:"senses",ex:["He {chose} the blue shirt.","The winner was {chosen} by vote."]},
+  {v1:"come",v2:"came",v3:"come",ru:"приходить, прибывать",p:"ABA",theme:"movement",ex:["She {came} home late.","Have you {come} far?"]},
+  {v1:"cost",v2:"cost",v3:"cost",ru:"стоить",p:"AAA",theme:"everyday",ex:["The ticket {cost} fifty dollars.","It has {cost} us a lot of time."]},
+  {v1:"cut",v2:"cut",v3:"cut",ru:"резать",p:"AAA",theme:"creation",ex:["He {cut} the paper in half.","My hair needs to be {cut}."]},
+  {v1:"deal",v2:"dealt",v3:"dealt",ru:"иметь дело, распределять",p:"ABB",theme:"everyday",ex:["She {dealt} the cards carefully.","The matter was {dealt} with quickly."]},
+  {v1:"dig",v2:"dug",v3:"dug",ru:"копать, рыть",p:"ABB",theme:"creation",ex:["They {dug} a hole in the garden.","A tunnel had been {dug} under the road."]},
+  {v1:"do",v2:"did",v3:"done",ru:"делать, выполнять",p:"ABC",theme:"creation",ex:["What {did} you do today?","Have you {done} your homework?"]},
+  {v1:"draw",v2:"drew",v3:"drawn",ru:"рисовать, чертить",p:"ABC",theme:"creation",ex:["She {drew} a beautiful portrait.","The curtains were {drawn} shut."]},
+  {v1:"drink",v2:"drank",v3:"drunk",ru:"пить",p:"ABC",theme:"everyday",ex:["He {drank} three cups of coffee.","I've never {drunk} green tea before."]},
+  {v1:"drive",v2:"drove",v3:"driven",ru:"ехать, водить машину",p:"ABC",theme:"movement",ex:["She {drove} to work this morning.","Have you ever {driven} a truck?"]},
+  {v1:"eat",v2:"ate",v3:"eaten",ru:"есть",p:"ABC",theme:"everyday",ex:["We {ate} pizza for dinner.","I haven't {eaten} since breakfast."]},
+  {v1:"fall",v2:"fell",v3:"fallen",ru:"падать",p:"ABC",theme:"movement",ex:["He {fell} off his bicycle.","Snow has {fallen} all night."]},
+  {v1:"feed",v2:"fed",v3:"fed",ru:"кормить",p:"ABB",theme:"everyday",ex:["She {fed} the baby at noon.","The animals are {fed} twice a day."]},
+  {v1:"feel",v2:"felt",v3:"felt",ru:"чувствовать, ощущать",p:"ABB",theme:"senses",ex:["I {felt} cold all morning.","Have you ever {felt} this nervous?"]},
+  {v1:"fight",v2:"fought",v3:"fought",ru:"драться, сражаться",p:"ABB",theme:"creation",ex:["They {fought} for two hours.","The disease has been {fought} hard."]},
+  {v1:"find",v2:"found",v3:"found",ru:"находить, обнаруживать",p:"ABB",theme:"senses",ex:["She {found} her keys under the sofa.","A solution has been {found}."]},
+  {v1:"fly",v2:"flew",v3:"flown",ru:"летать",p:"ABC",theme:"movement",ex:["The plane {flew} over the mountains.","I've {flown} to Paris twice."]},
+  {v1:"forget",v2:"forgot",v3:"forgotten",ru:"забывать",p:"ABC",theme:"senses",ex:["I {forgot} my umbrella today.","He has {forgotten} her birthday again."]},
+  {v1:"forgive",v2:"forgave",v3:"forgiven",ru:"прощать",p:"ABC",theme:"speech",ex:["She {forgave} him for being late.","He hopes to be {forgiven}."]},
+  {v1:"freeze",v2:"froze",v3:"frozen",ru:"замерзать",p:"ABC",theme:"everyday",ex:["The lake {froze} last winter.","The pipes have {frozen} again."]},
+  {v1:"get",v2:"got",v3:"got",ru:"получать, добираться",p:"ABB",theme:"everyday",ex:["I {got} your message this morning.","She has {got} a new job."]},
+  {v1:"give",v2:"gave",v3:"given",ru:"давать, дарить",p:"ABC",theme:"speech",ex:["He {gave} her a present.","The speech was {given} in public."]},
+  {v1:"go",v2:"went",v3:"gone",ru:"идти, двигаться",p:"ABC",theme:"movement",ex:["We {went} to the beach yesterday.","She has {gone} to the store."]},
+  {v1:"grow",v2:"grew",v3:"grown",ru:"расти, вырастать",p:"ABC",theme:"everyday",ex:["The plants {grew} very fast.","He has {grown} a lot this year."]},
+  {v1:"hang",v2:"hung",v3:"hung",ru:"вешать, висеть",p:"ABB",theme:"creation",ex:["She {hung} the picture on the wall.","The coat was {hung} by the door."]},
+  {v1:"have",v2:"had",v3:"had",ru:"иметь, обладать",p:"ABB",theme:"everyday",ex:["We {had} a great time last night.","I've {had} enough for today."]},
+  {v1:"hear",v2:"heard",v3:"heard",ru:"слышать",p:"ABB",theme:"senses",ex:["I {heard} a strange noise.","Have you {heard} the news?"]},
+  {v1:"hide",v2:"hid",v3:"hidden",ru:"прятать, скрывать",p:"ABC",theme:"movement",ex:["The child {hid} behind the sofa.","The key was {hidden} under the mat."]},
+  {v1:"hit",v2:"hit",v3:"hit",ru:"ударять, поражать",p:"AAA",theme:"creation",ex:["He {hit} the ball out of the park.","The car was {hit} from behind."]},
+  {v1:"hold",v2:"held",v3:"held",ru:"держать, удерживать",p:"ABB",theme:"everyday",ex:["She {held} the baby gently.","The record has been {held} for years."]},
+  {v1:"hurt",v2:"hurt",v3:"hurt",ru:"ранить, причинять боль",p:"AAA",theme:"senses",ex:["He {hurt} his knee during the game.","My back has {hurt} all day."]},
+  {v1:"keep",v2:"kept",v3:"kept",ru:"хранить, сохранять",p:"ABB",theme:"everyday",ex:["She {kept} all his letters.","The secret was {kept} for years."]},
+  {v1:"know",v2:"knew",v3:"known",ru:"знать",p:"ABC",theme:"senses",ex:["I {knew} the answer immediately.","He has {known} her since childhood."]},
+  {v1:"lay",v2:"laid",v3:"laid",ru:"класть, положить",p:"ABB",theme:"creation",ex:["She {laid} the book on the table.","The foundation was {laid} in spring."]},
+  {v1:"lead",v2:"led",v3:"led",ru:"вести, руководить",p:"ABB",theme:"movement",ex:["He {led} the team to victory.","The path {led} us to a river."]},
+  {v1:"leave",v2:"left",v3:"left",ru:"покидать, уходить",p:"ABB",theme:"movement",ex:["She {left} home at eight.","He has {left} the building."]},
+  {v1:"lend",v2:"lent",v3:"lent",ru:"одалживать",p:"ABB",theme:"everyday",ex:["I {lent} him twenty dollars.","The book was {lent} to a friend."]},
+  {v1:"let",v2:"let",v3:"let",ru:"позволять, разрешать",p:"AAA",theme:"speech",ex:["They {let} us stay for free.","He was {let} go from his job."]},
+  {v1:"lie",v2:"lay",v3:"lain",ru:"лежать",p:"ABC",theme:"everyday",ex:["She {lay} on the grass and relaxed.","He had {lain} awake all night."]},
+  {v1:"light",v2:"lit",v3:"lit",ru:"зажигать, освещать",p:"ABB",theme:"creation",ex:["He {lit} a candle in the dark.","The fire was {lit} at sunset."]},
+  {v1:"lose",v2:"lost",v3:"lost",ru:"терять, проигрывать",p:"ABB",theme:"everyday",ex:["We {lost} the game by one point.","Have you {lost} your wallet?"]},
+  {v1:"make",v2:"made",v3:"made",ru:"делать, создавать",p:"ABB",theme:"creation",ex:["She {made} a delicious cake.","A decision was {made} quickly."]},
+  {v1:"mean",v2:"meant",v3:"meant",ru:"значить, подразумевать",p:"ABB",theme:"speech",ex:["What did you mean by that?","I {meant} no harm at all."]},
+  {v1:"meet",v2:"met",v3:"met",ru:"встречать, знакомиться",p:"ABB",theme:"speech",ex:["We {met} at the conference.","Have you ever {met} a celebrity?"]},
+  {v1:"pay",v2:"paid",v3:"paid",ru:"платить",p:"ABB",theme:"everyday",ex:["He {paid} the bill in cash.","The invoice has been {paid}."]},
+  {v1:"put",v2:"put",v3:"put",ru:"ставить, помещать",p:"AAA",theme:"creation",ex:["She {put} the keys on the shelf.","Has everything been {put} away?"]},
+  {v1:"read",v2:"read",v3:"read",ru:"читать",p:"AAA",theme:"creation",ex:["I {read} the whole book last night.","Have you {read} this article?"]},
+  {v1:"ride",v2:"rode",v3:"ridden",ru:"ехать верхом, кататься",p:"ABC",theme:"movement",ex:["He {rode} his bike to school.","I've never {ridden} a horse before."]},
+  {v1:"ring",v2:"rang",v3:"rung",ru:"звонить, звенеть",p:"ABC",theme:"speech",ex:["The bell {rang} at noon.","Someone has {rung} the doorbell."]},
+  {v1:"rise",v2:"rose",v3:"risen",ru:"восходить, подниматься",p:"ABC",theme:"movement",ex:["The sun {rose} at six today.","Prices have {risen} again."]},
+  {v1:"run",v2:"ran",v3:"run",ru:"бежать, бегать",p:"ABA",theme:"movement",ex:["She {ran} five kilometres this morning.","He has {run} marathons before."]},
+  {v1:"say",v2:"said",v3:"said",ru:"говорить, сказать",p:"ABB",theme:"speech",ex:["What did she say to you?","It was {said} to be haunted."]},
+  {v1:"see",v2:"saw",v3:"seen",ru:"видеть",p:"ABC",theme:"senses",ex:["I {saw} a great film last night.","Have you {seen} my glasses?"]},
+  {v1:"seek",v2:"sought",v3:"sought",ru:"искать",p:"ABB",theme:"senses",ex:["He {sought} advice from his mentor.","Help was {sought} from neighbours."]},
+  {v1:"sell",v2:"sold",v3:"sold",ru:"продавать",p:"ABB",theme:"everyday",ex:["They {sold} the house last month.","All tickets have been {sold}."]},
+  {v1:"send",v2:"sent",v3:"sent",ru:"посылать, отправлять",p:"ABB",theme:"speech",ex:["I {sent} you an email this morning.","The parcel was {sent} by express."]},
+  {v1:"set",v2:"set",v3:"set",ru:"устанавливать, задавать",p:"AAA",theme:"creation",ex:["She {set} a new world record.","The alarm was {set} for 6 am."]},
+  {v1:"shake",v2:"shook",v3:"shaken",ru:"трясти, встряхивать",p:"ABC",theme:"creation",ex:["They {shook} hands at the end.","The bottle should be {shaken} well."]},
+  {v1:"shine",v2:"shone",v3:"shone",ru:"светить, сиять",p:"ABB",theme:"everyday",ex:["The sun {shone} all afternoon.","The torch was {shone} into the cave."]},
+  {v1:"shoot",v2:"shot",v3:"shot",ru:"стрелять",p:"ABB",theme:"creation",ex:["He {shot} the basketball perfectly.","The film was {shot} in New Zealand."]},
+  {v1:"show",v2:"showed",v3:"shown",ru:"показывать",p:"ABC",theme:"speech",ex:["She {showed} me her drawings.","The data is {shown} on the graph."]},
+  {v1:"shut",v2:"shut",v3:"shut",ru:"закрывать, запирать",p:"AAA",theme:"everyday",ex:["He {shut} the door quietly.","The factory was {shut} down."]},
+  {v1:"sing",v2:"sang",v3:"sung",ru:"петь",p:"ABC",theme:"creation",ex:["The choir {sang} beautifully.","This song has been {sung} for years."]},
+  {v1:"sink",v2:"sank",v3:"sunk",ru:"тонуть, погружаться",p:"ABC",theme:"movement",ex:["The ship {sank} in the storm.","Several boats had been {sunk}."]},
+  {v1:"sit",v2:"sat",v3:"sat",ru:"сидеть, садиться",p:"ABB",theme:"everyday",ex:["We {sat} by the fire all evening.","He has {sat} in the same chair for years."]},
+  {v1:"sleep",v2:"slept",v3:"slept",ru:"спать",p:"ABB",theme:"everyday",ex:["She {slept} for ten hours.","Have you {slept} well?"]},
+  {v1:"speak",v2:"spoke",v3:"spoken",ru:"говорить, разговаривать",p:"ABC",theme:"speech",ex:["He {spoke} for an hour.","English is {spoken} worldwide."]},
+  {v1:"spend",v2:"spent",v3:"spent",ru:"тратить, проводить время",p:"ABB",theme:"everyday",ex:["They {spent} the weekend in Paris.","A lot of money was {spent} on it."]},
+  {v1:"stand",v2:"stood",v3:"stood",ru:"стоять",p:"ABB",theme:"movement",ex:["We {stood} in line for an hour.","She has {stood} by him always."]},
+  {v1:"steal",v2:"stole",v3:"stolen",ru:"воровать, красть",p:"ABC",theme:"everyday",ex:["Someone {stole} my wallet.","The painting was {stolen} at night."]},
+  {v1:"stick",v2:"stuck",v3:"stuck",ru:"приклеивать, застревать",p:"ABB",theme:"creation",ex:["The stamp {stuck} to the envelope.","The car got {stuck} in the mud."]},
+  {v1:"strike",v2:"struck",v3:"struck",ru:"ударять, бить",p:"ABB",theme:"creation",ex:["Lightning {struck} the tree.","Workers {struck} for higher wages."]},
+  {v1:"swear",v2:"swore",v3:"sworn",ru:"клясться",p:"ABC",theme:"speech",ex:["He {swore} to tell the truth.","She has {sworn} an oath."]},
+  {v1:"sweep",v2:"swept",v3:"swept",ru:"мести, подметать",p:"ABB",theme:"everyday",ex:["She {swept} the kitchen floor.","The path was {swept} clean."]},
+  {v1:"swim",v2:"swam",v3:"swum",ru:"плавать",p:"ABC",theme:"movement",ex:["We {swam} in the lake yesterday.","I've never {swum} in the ocean."]},
+  {v1:"swing",v2:"swung",v3:"swung",ru:"качаться, вертеться",p:"ABB",theme:"movement",ex:["The monkey {swung} from branch to branch.","The gate {swung} open in the wind."]},
+  {v1:"take",v2:"took",v3:"taken",ru:"брать, хватать",p:"ABC",theme:"movement",ex:["She {took} the last bus home.","All the seats have been {taken}."]},
+  {v1:"teach",v2:"taught",v3:"taught",ru:"учить, обучать",p:"ABB",theme:"speech",ex:["He {taught} English for twenty years.","We were {taught} to be polite."]},
+  {v1:"tear",v2:"tore",v3:"torn",ru:"рвать, отрывать",p:"ABC",theme:"creation",ex:["He {tore} the letter in half.","The bag was {torn} at the corner."]},
+  {v1:"tell",v2:"told",v3:"told",ru:"рассказывать",p:"ABB",theme:"speech",ex:["She {told} me a funny story.","Have you been {told} the news?"]},
+  {v1:"think",v2:"thought",v3:"thought",ru:"думать, размышлять",p:"ABB",theme:"senses",ex:["I {thought} about it all night.","It was {thought} to be impossible."]},
+  {v1:"throw",v2:"threw",v3:"thrown",ru:"бросать, метать",p:"ABC",theme:"movement",ex:["He {threw} the ball across the field.","The ball was {thrown} too high."]},
+  {v1:"understand",v2:"understood",v3:"understood",ru:"понимать",p:"ABB",theme:"senses",ex:["She {understood} every word.","It is {understood} by everyone."]},
+  {v1:"wake",v2:"woke",v3:"woken",ru:"просыпаться, будить",p:"ABC",theme:"everyday",ex:["I {woke} up at six this morning.","She was {woken} by a noise."]},
+  {v1:"wear",v2:"wore",v3:"worn",ru:"носить одежду",p:"ABC",theme:"everyday",ex:["He {wore} a suit to the interview.","This jacket has been {worn} many times."]},
+  {v1:"win",v2:"won",v3:"won",ru:"победить, выиграть",p:"ABB",theme:"everyday",ex:["Our team {won} the championship!","The race was {won} by a second."]},
+  {v1:"write",v2:"wrote",v3:"written",ru:"писать",p:"ABC",theme:"creation",ex:["She {wrote} three pages.","The book was {written} in a month."]},
+];
+
+// ── ADAPTIVE ENGINE ──────────────────────────────────
+const SESSION=20;
+let scores={},sessionScore=0,currentTheme='all',currentMode='';
+let bestSpeed=parseInt(localStorage.getItem('vf_best')||'0');
+
+function loadScores(){try{scores=JSON.parse(localStorage.getItem('vf_scores')||'{}');}catch(e){scores={};}}
+function saveScores(){localStorage.setItem('vf_scores',JSON.stringify(scores));}
+function getS(v){return scores[v.v1]||{ok:0,bad:0,seen:0};}
+function recordResult(v,ok){const s=getS(v);s.seen++;ok?s.ok++:s.bad++;scores[v.v1]=s;saveScores();}
+function weight(v){const s=getS(v);if(s.seen===0)return 8;return Math.max(1,6-s.ok+s.bad*2);}
+function masteryLevel(v){const s=getS(v);if(!s.seen)return 0;if(s.ok<3)return 1;if(s.ok<5)return 2;if(s.ok<8)return 3;return 4;}
+function adaptBadge(v){
+  const s=getS(v);
+  if(!s.seen)return{cls:'new',text:'⭐ New verb'};
+  if(s.bad>s.ok)return{cls:'review',text:'🔁 Needs review — seen '+s.seen+'×'};
+  if(s.ok>=5)return{cls:'known',text:'✓ Well known — '+s.ok+' correct'};
+  return{cls:'review',text:'📖 Practising — '+s.ok+' correct'};
+}
+function buildDeck(){
+  let pool=currentTheme==='all'?VERBS:VERBS.filter(v=>v.theme===currentTheme);
+  if(pool.length<SESSION)pool=[...pool,...shuffle(VERBS.filter(v=>!pool.includes(v))).slice(0,SESSION-pool.length)];
+  const deck=[],avail=[...pool];
+  while(deck.length<SESSION&&avail.length>0){
+    const tot=avail.reduce((a,v)=>a+weight(v),0);let r=Math.random()*tot,idx=0;
+    for(let i=0;i<avail.length;i++){r-=weight(avail[i]);if(r<=0){idx=i;break;}}
+    deck.push(avail.splice(idx,1)[0]);
+  }
+  return deck;
+}
+function shuffle(a){let b=[...a];for(let i=b.length-1;i>0;i--){let j=Math.floor(Math.random()*(i+1));[b[i],b[j]]=[b[j],b[i]];}return b;}
+function norm(s){return s.trim().toLowerCase().replace(/[\s\/,]+.*/,'');}
+function chk(ans,correct){return correct.split('/').map(x=>x.trim().toLowerCase()).includes(norm(ans));}
+
+// ── NAV ──────────────────────────────────────────────
+function goHome(){showScreen('home');document.getElementById('navModes').classList.add('hidden');document.getElementById('navScore').classList.add('hidden');document.getElementById('navHomeBtn').classList.add('hidden');currentMode='';}
+function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');}
+function showNav(mode){
+  document.getElementById('navModes').classList.remove('hidden');document.getElementById('navScore').classList.remove('hidden');document.getElementById('navHomeBtn').classList.remove('hidden');
+  document.getElementById('scoreVal').textContent=sessionScore;
+  document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
+  const btn=document.querySelector(`.mode-btn[onclick="startMode('${mode}')"]`);if(btn)btn.classList.add('active');
+}
+function addScore(n){sessionScore+=n;document.getElementById('scoreVal').textContent=sessionScore;}
+function selectTheme(btn){document.querySelectorAll('.theme-pill').forEach(b=>b.classList.remove('sel'));btn.classList.add('sel');currentTheme=btn.dataset.theme;}
+function startMode(mode){currentMode=mode;showNav(mode);showScreen(mode);window['init_'+mode]();}
+
+// ── DOTS ─────────────────────────────────────────────
+function renderDots(elId,deck,idx,results){
+  const el=document.getElementById(elId);el.innerHTML='';
+  deck.forEach((_,i)=>{const d=document.createElement('div');d.className='m-dot'+(i<idx?(results[i]?' done-ok':' done-bad'):i===idx?' current':'');el.appendChild(d);});
+}
+function setBadge(id,v){const ab=adaptBadge(v),el=document.getElementById(id);el.className='adapt-badge '+ab.cls;el.textContent=ab.text;}
+
+// ── FLASHCARD ─────────────────────────────────────────
+let fcDeck,fcIdx,fcKnown,fcUnknown,fcFlipped,fcResults,fcStreak;
+function init_flashcard(){fcDeck=buildDeck();fcIdx=0;fcKnown=0;fcUnknown=0;fcFlipped=false;fcResults=[];fcStreak=0;fcRender();}
+function fcRender(){
+  if(fcIdx>=fcDeck.length){fcDone();return;}
+  const v=fcDeck[fcIdx];
+  document.getElementById('fc-v1').textContent=v.v1;document.getElementById('fc-ru').textContent=v.ru;
+  document.getElementById('fc-b1').textContent=v.v1;document.getElementById('fc-b2').textContent=v.v2;document.getElementById('fc-b3').textContent=v.v3;
+  const ex=v.ex[Math.floor(Math.random()*v.ex.length)];
+  document.getElementById('fc-example').innerHTML=v.ru+' · '+ex.replace(/\{(\w+)\}/g,'<b>$1</b>');
+  document.getElementById('flashcard').classList.remove('flipped');document.getElementById('fc-btns').classList.add('hidden');fcFlipped=false;
+  setBadge('fc-adapt-badge',v);
+  document.getElementById('fc-progress').textContent=(fcIdx+1)+'/'+SESSION;
+  document.getElementById('fc-known').textContent=fcKnown;document.getElementById('fc-unknown').textContent=fcUnknown;
+  document.getElementById('fc-streak').textContent=fcStreak;
+  document.getElementById('fc-bar').style.width=(fcIdx/SESSION*100)+'%';
+  document.getElementById('fc-nav-label').textContent=(fcIdx+1)+' / '+SESSION;
+  renderDots('fc-dots',fcDeck,fcIdx,fcResults);
+}
+function flipCard(){if(!fcFlipped){document.getElementById('flashcard').classList.add('flipped');document.getElementById('fc-btns').classList.remove('hidden');fcFlipped=true;}}
+function fcRate(ok){recordResult(fcDeck[fcIdx],ok);fcResults.push(ok);ok?(fcKnown++,fcStreak++,addScore(1)):(fcUnknown++,fcStreak=0);fcIdx++;fcRender();}
+function fcNextBtn(){fcFlipped?fcRate(true):flipCard();}
+function fcPrev(){if(fcIdx>0){fcIdx--;fcResults.pop();fcRender();}}
+function fcDone(){const p=Math.round(fcKnown/SESSION*100);if(confirm('Session done! 🎉\nKnown: '+fcKnown+'/'+SESSION+' ('+p+'%)\nWeak verbs come back next session.\n\nNew session?')){init_flashcard();}else goHome();}
+
+// ── THREE FORMS ───────────────────────────────────────
+let tfDeck,tfIdx,tfCorrect,tfChecked,tfResults;
+function init_threeforms(){tfDeck=buildDeck();tfIdx=0;tfCorrect=0;tfChecked=false;tfResults=[];tfRender();}
+function tfRender(){
+  if(tfIdx>=tfDeck.length){tfDone();return;}
+  const v=tfDeck[tfIdx];
+  document.getElementById('tf-verb').textContent='[ ? ]';document.getElementById('tf-trans').textContent=v.ru;
+  ['tf-v1','tf-v2','tf-v3'].forEach(id=>{const e=document.getElementById(id);e.value='';e.className='tf-input';e.disabled=false;});
+  document.getElementById('tf-feedback').className='hidden';document.getElementById('tf-ex-wrap').className='tf-example hidden';
+  document.getElementById('tf-check-btn').classList.remove('hidden');document.getElementById('tf-next-btn').classList.add('hidden');tfChecked=false;
+  setBadge('tf-adapt-badge',v);
+  document.getElementById('tf-progress').textContent=(tfIdx+1)+'/'+SESSION;
+  document.getElementById('tf-bar').style.width=(tfIdx/SESSION*100)+'%';
+  renderDots('tf-dots',tfDeck,tfIdx,tfResults);document.getElementById('tf-v1').focus();
+}
+function tfKey(e){if(e.key==='Enter')tfChecked?tfNext():tfCheck();}
+function tfCheck(){
+  const v=tfDeck[tfIdx];
+  const c1=chk(document.getElementById('tf-v1').value,v.v1),c2=chk(document.getElementById('tf-v2').value,v.v2),c3=chk(document.getElementById('tf-v3').value,v.v3);
+  const ok=c1&&c2&&c3;document.getElementById('tf-verb').textContent=v.v1;
+  [['tf-v1',c1,v.v1],['tf-v2',c2,v.v2],['tf-v3',c3,v.v3]].forEach(([id,c,ans])=>{const e=document.getElementById(id);e.className='tf-input '+(c?'correct':'wrong');e.disabled=true;if(!c)e.value=ans;});
+  const fb=document.getElementById('tf-feedback');fb.className='feedback '+(ok?'ok':'bad');fb.textContent=ok?'Perfect! ✓':'Correct: '+v.v1+' → '+v.v2+' → '+v.v3;
+  document.getElementById('tf-ex').innerHTML=v.ex[0].replace(/\{(\w+)\}/g,'<b>$1</b>');document.getElementById('tf-ex-wrap').className='tf-example';
+  document.getElementById('tf-check-btn').classList.add('hidden');document.getElementById('tf-next-btn').classList.remove('hidden');
+  recordResult(v,ok);tfResults.push(ok);if(ok){tfCorrect++;addScore(1);}tfChecked=true;
+  document.getElementById('tf-correct').textContent=tfCorrect;
+  document.getElementById('tf-pct').textContent=Math.round(tfCorrect/(tfIdx+1)*100)+'%';
+}
+function tfNext(){tfIdx++;tfRender();}
+function tfDone(){const p=Math.round(tfCorrect/SESSION*100);if(confirm('Done! '+tfCorrect+'/'+SESSION+' ('+p+'%)\n\nNew session?')){init_threeforms();}else goHome();}
+
+// ── FILL IN BLANK ──────────────────────────────────────
+const TENSES=[{label:'Past Simple',key:'v2'},{label:'Present Perfect (V3)',key:'v3'},{label:'Base form',key:'v1'}];
+let fibDeck,fibIdx,fibCorrect,fibResults;
+function init_fillin(){fibDeck=buildDeck();fibIdx=0;fibCorrect=0;fibResults=[];fibRender();}
+function fibRender(){
+  if(fibIdx>=fibDeck.length){fibDone();return;}
+  const v=fibDeck[fibIdx];const tense=TENSES[Math.floor(Math.random()*TENSES.length)];const correct=v[tense.key];
+  const sentence=v.ex[Math.floor(Math.random()*v.ex.length)].replace(/\{(\w+)\}/g,'___');
+  document.getElementById('fib-sentence').innerHTML=sentence.replace('___','<span class="fib-blank">___</span>');
+  document.getElementById('fib-meta').textContent='"'+v.v1+'" — '+v.ru+'  ·  '+tense.label;
+  const others=shuffle(VERBS.filter(x=>x!==v)).slice(0,3);
+  const choices=shuffle([correct,...others.map(o=>o[tense.key])]);
+  const el=document.getElementById('fib-choices');el.innerHTML='';
+  choices.forEach(c=>{const btn=document.createElement('button');btn.className='fib-choice';btn.textContent=c;btn.onclick=()=>fibSelect(btn,c,correct,v);el.appendChild(btn);});
+  document.getElementById('fib-feedback').className='hidden';document.getElementById('fib-next-btn').classList.add('hidden');
+  setBadge('fib-adapt-badge',v);
+  document.getElementById('fib-progress').textContent=(fibIdx+1)+'/'+SESSION;
+  document.getElementById('fib-bar').style.width=(fibIdx/SESSION*100)+'%';
+  renderDots('fib-dots',fibDeck,fibIdx,fibResults);
+}
+function fibSelect(btn,chosen,correct,v){
+  document.getElementById('fib-choices').querySelectorAll('.fib-choice').forEach(b=>b.onclick=null);
+  document.getElementById('fib-sentence').querySelector('.fib-blank').textContent=chosen;
+  const ok=chosen===correct;btn.className='fib-choice '+(ok?'sel-ok':'sel-bad');
+  if(!ok)document.getElementById('fib-choices').querySelectorAll('.fib-choice').forEach(b=>{if(b.textContent===correct)b.className='fib-choice reveal-ok';});
+  const fb=document.getElementById('fib-feedback');fb.className='feedback '+(ok?'ok':'bad');fb.textContent=ok?'Correct! ✓':'Right answer: '+correct;
+  document.getElementById('fib-next-btn').classList.remove('hidden');
+  recordResult(v,ok);fibResults.push(ok);fibIdx++;if(ok){fibCorrect++;addScore(1);}
+  document.getElementById('fib-correct').textContent=fibCorrect;
+  document.getElementById('fib-pct').textContent=Math.round(fibCorrect/fibIdx*100)+'%';
+}
+function fibNext(){fibRender();}
+function fibDone(){const p=Math.round(fibCorrect/SESSION*100);if(confirm('Done! '+fibCorrect+'/'+SESSION+' ('+p+'%)\n\nNew session?')){init_fillin();}else goHome();}
+
+// ── SPEED ──────────────────────────────────────────────
+let spDeck,spIdx,spScore,spStreak,spInterval,spTime;
+function init_speed(){document.getElementById('sp-ready').classList.remove('hidden');document.getElementById('sp-game').classList.add('hidden');document.getElementById('sp-over').classList.add('hidden');document.getElementById('sp-best').textContent=bestSpeed;}
+function spStart(){spDeck=buildDeck();spIdx=0;spScore=0;spStreak=0;document.getElementById('sp-ready').classList.add('hidden');document.getElementById('sp-over').classList.add('hidden');document.getElementById('sp-game').classList.remove('hidden');spNext();}
+function spNext(){
+  if(spIdx>=spDeck.length){spGameOver();return;}
+  const v=spDeck[spIdx];document.getElementById('sp-verb').textContent=v.v1;document.getElementById('sp-trans').textContent=v.ru;
+  ['sp-v1','sp-v2','sp-v3'].forEach(id=>{const e=document.getElementById(id);e.value='';e.className='speed-input';e.disabled=false;});
+  document.getElementById('sp-fb').textContent='';spTime=10;document.getElementById('sp-timer').textContent=spTime;document.getElementById('sp-timer').classList.remove('urgent');
+  clearInterval(spInterval);spInterval=setInterval(()=>{spTime--;document.getElementById('sp-timer').textContent=spTime;if(spTime<=3)document.getElementById('sp-timer').classList.add('urgent');if(spTime<=0){clearInterval(spInterval);spTimeUp();}},1000);
+  document.getElementById('sp-v1').focus();
+}
+function spKey(e){if(e.key==='Enter')spCheck();}
+function spCheck(){
+  clearInterval(spInterval);const v=spDeck[spIdx];
+  const c1=chk(document.getElementById('sp-v1').value,v.v1),c2=chk(document.getElementById('sp-v2').value,v.v2),c3=chk(document.getElementById('sp-v3').value,v.v3);
+  const ok=c1&&c2&&c3;
+  ['sp-v1','sp-v2','sp-v3'].forEach((id,i)=>{const e=document.getElementById(id);e.className='speed-input '+([c1,c2,c3][i]?'correct':'wrong');e.disabled=true;});
+  if(ok){const fast=spTime>=7;spScore+=fast?2:1;spStreak++;document.getElementById('sp-fb').innerHTML='<span style="color:var(--accent)">'+(fast?'⚡ Fast! +2':'+1 ✓')+'</span>';addScore(fast?2:1);}
+  else{spStreak=0;document.getElementById('sp-fb').innerHTML='<span style="color:var(--err)">✗ '+v.v1+' → '+v.v2+' → '+v.v3+'</span>';}
+  recordResult(v,ok);document.getElementById('sp-score').textContent=spScore;document.getElementById('sp-streak').textContent=spStreak;spIdx++;setTimeout(spNext,1300);
+}
+function spTimeUp(){const v=spDeck[spIdx];spStreak=0;document.getElementById('sp-fb').innerHTML='<span style="color:var(--warn)">⏱ '+v.v1+' → '+v.v2+' → '+v.v3+'</span>';document.getElementById('sp-streak').textContent=0;recordResult(v,false);spIdx++;setTimeout(spNext,1500);}
+function spGameOver(){
+  clearInterval(spInterval);document.getElementById('sp-game').classList.add('hidden');document.getElementById('sp-over').classList.remove('hidden');document.getElementById('sp-final').textContent=spScore;
+  if(spScore>bestSpeed){bestSpeed=spScore;localStorage.setItem('vf_best',bestSpeed);document.getElementById('sp-rec').textContent='🏆 New record!';}
+  else document.getElementById('sp-rec').textContent='Best: '+bestSpeed;document.getElementById('sp-best').textContent=bestSpeed;
+}
+
+// ── SORTING ────────────────────────────────────────────
+const PATS=['AAA','ABB','ABC','ABA'];
+const PAT_CHECK={AAA:v=>v.v1===v.v2&&v.v2===v.v3,ABB:v=>v.v1!==v.v2&&v.v2===v.v3,ABC:v=>v.v1!==v.v2&&v.v2!==v.v3&&v.v1!==v.v3,ABA:v=>v.v1!==v.v2&&v.v1===v.v3};
+let placedMap={};
+function init_sorting(){
+  placedMap={AAA:[],ABB:[],ABC:[],ABA:[]};
+  PATS.forEach(p=>{document.getElementById('placed-'+p).innerHTML='';document.getElementById('bucket-'+p).classList.remove('drag-over');});
+  document.getElementById('sort-result').className='hidden mt2 center';document.getElementById('sort-placed').textContent='0';document.getElementById('sort-correct').textContent='0';document.getElementById('sort-pct').textContent='—';
+  const pool=buildDeck();const poolEl=document.getElementById('sort-pool');poolEl.innerHTML='';
+  pool.forEach(v=>{const chip=document.createElement('div');chip.className='sort-chip';chip.textContent=v.v1;chip.draggable=true;chip.dataset.verb=v.v1;chip.addEventListener('dragstart',e=>e.dataTransfer.setData('text',v.v1));poolEl.appendChild(chip);});
+}
+function sortDrop(e,pat){
+  e.preventDefault();document.getElementById('bucket-'+pat).classList.remove('drag-over');const vn=e.dataTransfer.getData('text');
+  const chip=document.querySelector(`.sort-chip[data-verb="${vn}"]`);if(!chip||chip.classList.contains('placed'))return;
+  chip.classList.add('placed');placedMap[pat].push(vn);
+  const bc=document.createElement('span');bc.className='bucket-chip';bc.textContent=vn;bc.dataset.verb=vn;bc.dataset.pat=pat;
+  bc.onclick=()=>{placedMap[pat]=placedMap[pat].filter(x=>x!==vn);bc.remove();chip.classList.remove('placed');document.getElementById('sort-placed').textContent=PATS.reduce((a,p)=>a+placedMap[p].length,0);};
+  document.getElementById('placed-'+pat).appendChild(bc);document.getElementById('sort-placed').textContent=PATS.reduce((a,p)=>a+placedMap[p].length,0);
+}
+function sortCheck(){
+  let tot=0,cor=0;PATS.forEach(pat=>{document.getElementById('placed-'+pat).querySelectorAll('.bucket-chip').forEach(bc=>{tot++;const v=VERBS.find(x=>x.v1===bc.dataset.verb);const ok=v&&PAT_CHECK[pat](v);bc.className='bucket-chip '+(ok?'ok':'bad');if(ok)cor++;if(v)recordResult(v,ok);});});
+  const pct=tot?Math.round(cor/tot*100):0;document.getElementById('sort-correct').textContent=cor;document.getElementById('sort-pct').textContent=pct+'%';
+  document.getElementById('sort-result').className='mt2 center';document.getElementById('sort-result').innerHTML=cor+'/'+tot+' correct ('+pct+'%) '+(pct>=80?'🎉 Great!':'Keep going!');addScore(cor);
+}
+
+// ── LISTENING ──────────────────────────────────────────
+let liDeck,liIdx,liCorrect,liPlays,liChecked,liResults;
+function init_listening(){if(!window.speechSynthesis){alert('Speech synthesis not supported. Use Chrome or Edge.');goHome();return;}liDeck=buildDeck();liIdx=0;liCorrect=0;liPlays=0;liChecked=false;liResults=[];liRender();}
+function liRender(){
+  if(liIdx>=liDeck.length){liDone();return;}
+  liChecked=false;liPlays=0;
+  ['li-v1','li-v2','li-v3'].forEach(id=>{const e=document.getElementById(id);e.value='';e.className='listen-input';e.disabled=false;});
+  document.getElementById('li-feedback').className='hidden';document.getElementById('li-ex-wrap').className='tf-example hidden';
+  document.getElementById('li-check-btn').classList.remove('hidden');document.getElementById('li-next-btn').classList.add('hidden');
+  document.getElementById('li-play-btn').classList.remove('playing');document.getElementById('li-count').textContent='Press play to listen';
+  setBadge('li-adapt-badge',liDeck[liIdx]);
+  document.getElementById('li-progress').textContent=(liIdx+1)+'/'+SESSION;document.getElementById('li-bar').style.width=(liIdx/SESSION*100)+'%';
+  renderDots('li-dots',liDeck,liIdx,liResults);
+}
+function liPlay(){const v=liDeck[liIdx];liPlays++;document.getElementById('li-count').textContent='Played '+liPlays+'×';const btn=document.getElementById('li-play-btn');btn.classList.add('playing');window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(v.v1);u.lang='en-GB';u.rate=0.85;u.onend=()=>btn.classList.remove('playing');window.speechSynthesis.speak(u);document.getElementById('li-v1').focus();}
+function liKey(e){if(e.key==='Enter')liChecked?liNext():liCheck();}
+function liCheck(){
+  if(!liPlays){alert('Listen first!');return;}const v=liDeck[liIdx];
+  const c1=chk(document.getElementById('li-v1').value,v.v1),c2=chk(document.getElementById('li-v2').value,v.v2),c3=chk(document.getElementById('li-v3').value,v.v3);const ok=c1&&c2&&c3;
+  ['li-v1','li-v2','li-v3'].forEach((id,i)=>{const e=document.getElementById(id);e.className='listen-input '+([c1,c2,c3][i]?'correct':'wrong');e.disabled=true;if(![c1,c2,c3][i])e.value=[v.v1,v.v2,v.v3][i];});
+  const fb=document.getElementById('li-feedback');fb.className='feedback '+(ok?'ok':'bad');fb.textContent=ok?'Perfect! ✓':'Correct: '+v.v1+' → '+v.v2+' → '+v.v3;
+  document.getElementById('li-ex').innerHTML=v.ex[0].replace(/\{(\w+)\}/g,'<b>$1</b>');document.getElementById('li-ex-wrap').className='tf-example';
+  document.getElementById('li-check-btn').classList.add('hidden');document.getElementById('li-next-btn').classList.remove('hidden');
+  recordResult(v,ok);liResults.push(ok);if(ok){liCorrect++;addScore(1);}liIdx++;liChecked=true;
+  document.getElementById('li-correct').textContent=liCorrect;document.getElementById('li-pct').textContent=Math.round(liCorrect/liIdx*100)+'%';
+}
+function liNext(){liRender();}
+function liDone(){const p=Math.round(liCorrect/SESSION*100);if(confirm('Done! '+liCorrect+'/'+SESSION+' ('+p+'%)\n\nNew session?')){init_listening();}else goHome();}
+
+// ── PROGRESS ───────────────────────────────────────────
+function init_progress(){
+  const seen=VERBS.filter(v=>getS(v).seen>0).length,known=VERBS.filter(v=>masteryLevel(v)>=3).length,mastered=VERBS.filter(v=>masteryLevel(v)===4).length;
+  document.getElementById('prog-summary').textContent=seen+' of '+VERBS.length+' seen · '+known+' known · '+mastered+' mastered';
+  const grid=document.getElementById('prog-grid');grid.innerHTML='';
+  [...VERBS].sort((a,b)=>{const sa=getS(a),sb=getS(b);if(!sa.seen&&sb.seen)return 1;if(sa.seen&&!sb.seen)return-1;return(sb.bad-sb.ok)-(sa.bad-sa.ok);}).forEach(v=>{
+    const lv=masteryLevel(v),s=getS(v);const el=document.createElement('div');el.className='prog-item lv'+lv;
+    el.innerHTML='<span class="verb">'+v.v1+'</span><span class="dots">'+['○○○○','●○○○','●●○○','●●●○','●●●●'][lv]+'</span>';
+    el.title=v.ru+' | seen:'+s.seen+' ok:'+s.ok+' err:'+s.bad;grid.appendChild(el);
+  });
+}
+function resetProgress(){scores={};saveScores();init_progress();}
+
+
+
+// ══════════════════════════════════════════════════════
+//  PRACTICE — built-in exercise bank
+// ══════════════════════════════════════════════════════
+let prCurrentType='gap';
+let prCurrentExercise=null;
+let prUsedIdx={gap:[],dialogue:[],builder:[],translate:[],chooser:[],detective:[]};
+
+// ── BANK: GAP-FILL ────────────────────────────────────
+const PR_GAP=[
+{
+  title:"The Worst Tourist Ever",
+  verbs_used:["go","lose","buy","break","forget","take","find","spend"],
+  paragraphs:[
+    `Last summer Marco <BLANK:went:go:V2|goes|went|going> to Rome for the first time. He had <BLANK:bought:buy:V3|buyed|bought|buy> a brand-new camera the week before, but on the very first day he <BLANK:broke:break:V2|breaked|broken|broke> it by dropping it into a fountain.`,
+    `He then <BLANK:lost:lose:V2|losed|lost|lose> his wallet somewhere near the Colosseum, which meant he couldn't pay for anything. Luckily, a kind stranger <BLANK:found:find:V2|finded|found|finds> it and handed it back.`,
+    `By the end of the trip Marco had <BLANK:spent:spend:V3|spended|spent|spend> all his savings, <BLANK:forgotten:forget:V3|forgetted|forgotten|forgot> to visit three museums, and <BLANK:taken:take:V3|taked|taken|took> exactly zero good photos. He already wants to go back.`
+  ],
+  translation:"Прошлым летом Марко поехал в Рим впервые. Он купил новую камеру за неделю до поездки, но в первый же день уронил её в фонтан и сломал.\nЗатем где-то рядом с Колизеем он потерял кошелёк, а значит, не мог ничего оплатить. К счастью, добрый незнакомец нашёл его и вернул.\nК концу поездки Марко потратил все сбережения, забыл посетить три музея и не сделал ни одной хорошей фотографии. При этом он уже хочет вернуться."
+},
+{
+  title:"The Midnight Kitchen Disaster",
+  verbs_used:["wake","get","drink","eat","make","burn","cut","put"],
+  paragraphs:[
+    `At 2 a.m. Nina <BLANK:woke:wake:V2|woken|woke|wake> up absolutely starving. She <BLANK:got:get:V2|gotten|got|get> out of bed and crept to the kitchen, determined to make a snack without waking anyone.`,
+    `She had already <BLANK:drunk:drink:V3|drank|drunk|drinked> half a glass of orange juice and <BLANK:eaten:eat:V3|ate|eaten|eated> a handful of crackers when she decided to heat up soup. She <BLANK:put:put:V2|putted|put|puts> the pan on the stove, turned it to maximum, and immediately <BLANK:burned:burn:V2|burnd|burned|burning> the bottom.`,
+    `She <BLANK:cut:cut:V2|cutted|cut|cuting> her finger trying to open a tin, set off the smoke alarm, and <BLANK:made:make:V2|maked|made|make> so much noise the whole family woke up. Somehow she got blamed for everyone being tired the next day.`
+  ],
+  translation:"В 2 часа ночи Нина проснулась совершенно голодной. Она встала с кровати и прокралась на кухню, решив перекусить, не разбудив никого.\nОна уже выпила полстакана апельсинового сока и съела горсть крекеров, когда решила разогреть суп. Поставила кастрюлю на плиту, включила максимальный огонь и тут же пригорела дно.\nПорезала палец, пытаясь открыть банку, включила дымовую сигнализацию и подняла столько шума, что проснулась вся семья. Каким-то образом именно её обвинили в том, что все на следующий день были уставшими."
+},
+{
+  title:"The Job Interview",
+  verbs_used:["wear","drive","forget","meet","say","give","sit","keep"],
+  paragraphs:[
+    `Tom had never <BLANK:worn:wear:V3|wore|worn|weared> a suit before his big interview. He <BLANK:drove:drive:V2|driven|drove|drived> to the office, parked in the wrong building, and arrived twelve minutes late.`,
+    `He <BLANK:met:meet:V2|meeted|met|meet> the interviewer in the lobby and immediately <BLANK:forgot:forget:V2|forgotten|forgot|forgets> her name. When she <BLANK:gave:give:V2|gaved|gave|given> him a form to fill in, he realised he had left his pen in the car.`,
+    `He <BLANK:sat:sit:V2|sitted|sat|sit> down, <BLANK:kept:keep:V2|keeped|kept|keep> knocking things off the desk, and at one point <BLANK:said:say:V2|sayed|said|say> "thank you" when she asked him to describe his weaknesses. He got the job.`
+  ],
+  translation:"Том никогда раньше не надевал костюм — до своего важного собеседования. Он доехал до офиса, припарковался не в том здании и пришёл на двенадцать минут позже.\nВ вестибюле он встретил интервьюера и сразу же забыл её имя. Когда она дала ему бланк для заполнения, он обнаружил, что оставил ручку в машине.\nОн сел, несколько раз что-то сбросил со стола и в какой-то момент сказал «спасибо», когда его попросили описать свои слабые стороны. Он получил работу."
+},
+{
+  title:"The Record Attempt",
+  verbs_used:["run","swim","ride","fall","rise","beat","break","win"],
+  paragraphs:[
+    `Elena <BLANK:rose:rise:V2|risen|rose|rises> at four in the morning on the day of the triathlon. She had already <BLANK:broken:break:V3|broke|broken|breaked> the regional record twice, and today she planned to do it again.`,
+    `She <BLANK:swam:swim:V2|swum|swam|swimmed> the first stage in record time, <BLANK:rode:ride:V2|ridden|rode|rided> her bike through a sudden hailstorm, and nearly <BLANK:fell:fall:V2|fallen|fell|falled> twice on the slippery road.`,
+    `In the final stage she <BLANK:ran:run:V2|run|ran|runned> past all her rivals and <BLANK:beat:beat:V2|beated|beat|beaten> the world record by three seconds. She had <BLANK:won:win:V3|winned|won|win> championships before, but nothing felt like this.`
+  ],
+  translation:"Елена встала в четыре утра в день триатлона. Она уже дважды бивала региональный рекорд и сегодня планировала сделать это снова.\nПервый этап она проплыла за рекордное время, проехала на велосипеде через внезапный град и дважды едва не упала на скользкой дороге.\nНа финальном этапе она обогнала всех соперников и побила мировой рекорд на три секунды. Она уже побеждала в чемпионатах, но ничто не ощущалось так, как это."
+},
+{
+  title:"The Ghost and the Wi-Fi",
+  verbs_used:["come","hide","hear","see","feel","make","speak","leave"],
+  paragraphs:[
+    `The old house had been empty for years when the Petrov family <BLANK:came:come:V2|come|came|comed> to spend the weekend. From the first night they <BLANK:heard:hear:V2|hearted|heard|hear> strange noises from the attic.`,
+    `On Saturday morning little Sasha <BLANK:saw:see:V2|seen|saw|seed> a shape drift through the hallway. He <BLANK:felt:feel:V2|feeled|felt|feel> a cold wind and <BLANK:hid:hide:V2|hidden|hid|hide> under the blanket for an hour.`,
+    `It turned out the ghost had <BLANK:left:leave:V3|leaved|left|leave> a decade ago but <BLANK:made:make:V3|maked|made|make> such a mess of the wiring that the Wi-Fi still drops every evening at midnight. The family renewed their lease.`
+  ],
+  translation:"Старый дом пустовал много лет, когда семья Петровых приехала провести там выходные. С первой же ночи они слышали странные звуки с чердака.\nВ субботу утром маленький Саша увидел силуэт, скользящий по коридору. Он почувствовал холодный ветер и на час спрятался под одеялом.\nОказалось, что призрак ушёл десять лет назад, но так запутал проводку, что Wi-Fi до сих пор пропадает каждый вечер ровно в полночь. Семья продлила аренду."
+},
+{
+  title:"The Stolen Recipe",
+  verbs_used:["steal","hide","write","give","sell","find","keep","tell"],
+  paragraphs:[
+    `For three generations the Kowalski family had <BLANK:kept:keep:V3|keeped|kept|keep> their pierogi recipe a secret. They <BLANK:wrote:write:V2|written|wrote|writed> it in a code only family members could read and <BLANK:hid:hide:V2|hidden|hid|hided> it inside a old clock.`,
+    `One evening cousin Marek <BLANK:told:tell:V2|telled|told|tell> the recipe to his girlfriend, who <BLANK:sold:sell:V2|selled|sold|sell> it to a fast-food chain for an alarming amount of money.`,
+    `The family <BLANK:found:find:V2|finded|found|finds> out when the chain <BLANK:gave:give:V2|gaved|gave|given> the dish a silly name and started selling it on every corner. They <BLANK:wrote:write:V2|written|wrote|write> a furious letter. Nobody replied.`
+  ],
+  translation:"Три поколения семьи Ковальских хранили рецепт пельменей в тайне. Они записали его шифром, понятным только членам семьи, и спрятали внутри старинных часов.\nОднажды вечером кузен Марек рассказал рецепт своей подруге, которая продала его сети фастфуда за весьма тревожную сумму денег.\nСемья узнала об этом, когда сеть дала блюду нелепое название и начала продавать его на каждом углу. Они написали гневное письмо. Никто не ответил."
+},
+{
+  title:"The Fastest Delivery",
+  verbs_used:["drive","take","lose","find","bring","put","send","get"],
+  paragraphs:[
+    `The package had been <BLANK:sent:send:V3|sended|sent|send> on Monday and was promised by Wednesday. By Friday it had still not arrived, so Ben called the courier company.`,
+    `Apparently the driver had <BLANK:taken:take:V3|taked|taken|took> a wrong turn, <BLANK:lost:lose:V3|losed|lost|lose> the package in a snowstorm, <BLANK:found:find:V3|finded|found|finds> it again in a ditch, and <BLANK:driven:drive:V3|drove|driven|drived> two hundred kilometres in the wrong direction.`,
+    `He finally <BLANK:brought:bring:V2|bringed|brought|bring> the box to Ben's door on Sunday evening. Ben <BLANK:got:get:V2|gotten|got|gets> a full refund and the driver <BLANK:put:put:V2|putted|put|puts> in for a geography class.`
+  ],
+  translation:"Посылку отправили в понедельник и обещали доставить в среду. К пятнице она так и не пришла, и Бен позвонил в курьерскую компанию.\nОказывается, водитель свернул не туда, потерял посылку в метели, снова нашёл её в канаве и проехал двести километров в неправильном направлении.\nВ воскресенье вечером он наконец привёз коробку к двери Бена. Бен получил полный возврат денег, а водитель записался на уроки географии."
+},
+{
+  title:"The Language Swap",
+  verbs_used:["teach","learn","speak","understand","meet","read","write","forget"],
+  paragraphs:[
+    `Yuki and Carlos <BLANK:met:meet:V2|meeted|met|meet> at a language exchange event. She had <BLANK:spoken:speak:V3|spoke|spoken|speaked> only Japanese her whole life; he had <BLANK:written:write:V3|wrote|written|writed> novels in Spanish.`,
+    `Each week Yuki <BLANK:taught:teach:V2|teached|taught|teach> him ten new Japanese phrases, and he <BLANK:read:read:V2|readed|read|reads> her favourite Spanish poems aloud. She <BLANK:understood:understand:V2|understanded|understood|understand> every word of the rhythm even before she <BLANK:learned:learn:V2|learnt|learned|learn> the meanings.`,
+    `A year later Carlos had <BLANK:forgotten:forget:V3|forgetted|forgotten|forgot> most of his Spanish grammar but <BLANK:written:write:V3|wrote|written|write> a whole short story in Japanese. Yuki framed it and hung it on her wall.`
+  ],
+  translation:"Юки и Карлос познакомились на языковом обмене. Она всю жизнь говорила только по-японски; он писал романы на испанском.\nКаждую неделю Юки учила его десяти новым японским фразам, а он вслух читал ей любимые испанские стихи. Ритм она понимала ещё до того, как выучивала значения слов.\nЧерез год Карлос забыл большую часть испанской грамматики, зато написал целый рассказ по-японски. Юки оформила его в рамку и повесила на стену."
+}
+];
+
+// ── BANK: DIALOGUE ────────────────────────────────────
+const PR_DIALOGUE=[
+{
+  title:"The Time Traveller's Coffee",
+  scenario:"A time traveller from 1885 arrives in a modern café and tries to order.",
+  error_count:7,
+  lines:[
+    {speaker:"Barista",text:"Hi! What can I get you?"},
+    {speaker:"Victor",text:`I <ERROR correct="came">comed</ERROR> from the year 1885 and I have never saw such a machine. Is that a coffee engine?`},
+    {speaker:"Barista",text:"It's an espresso machine. Would you like a flat white?"},
+    {speaker:"Victor",text:`I once <ERROR correct="drank">drinked</ERROR> something called coffee in Vienna. It <ERROR correct="tasted">taste</ERROR> like burnt ambition.`},
+    {speaker:"Barista",text:"One flat white it is. That's four fifty, please."},
+    {speaker:"Victor",text:`I have <ERROR correct="brought">bringed</ERROR> only gold coins. I <ERROR correct="found">finded</ERROR> them in my waistcoat this morning.`},
+    {speaker:"Barista",text:"We don't accept gold coins."},
+    {speaker:"Victor",text:`How unfortunate. In my time we <ERROR correct="paid">payed</ERROR> for everything in coin. I <ERROR correct="wrote">writed</ERROR> the King a letter about this very issue.`},
+    {speaker:"Barista",text:"I'll give you this one for free. Welcome to the future."}
+  ],
+  summary:"Путешественник во времени из 1885 года заходит в современное кафе и пытается заказать кофе, расплачиваясь золотыми монетами."
+},
+{
+  title:"The Flatmate Interview",
+  scenario:"Two strangers meet to decide if they should share a flat.",
+  error_count:6,
+  lines:[
+    {speaker:"Priya",text:"So, have you lived in a shared flat before?"},
+    {speaker:"Dan",text:`Yes, I <ERROR correct="spent">spended</ERROR> two years in a house with four other people. We all <ERROR correct="got">getted</ERROR> along well — mostly.`},
+    {speaker:"Priya",text:"What do you mean, mostly?"},
+    {speaker:"Dan",text:`Well, someone <ERROR correct="ate">eated</ERROR> my birthday cake every year. I never <ERROR correct="found">finded</ERROR> out who.`},
+    {speaker:"Priya",text:"That's horrifying. I would have lost my mind."},
+    {speaker:"Dan",text:`I <ERROR correct="kept">keeped</ERROR> a diary about it. Forty-seven pages. I have <ERROR correct="read">readed</ERROR> it recently and honestly it's quite moving.`},
+    {speaker:"Priya",text:"You know what? You're hired. This flat needs energy like that."}
+  ],
+  summary:"Два незнакомца встречаются, чтобы решить, стоит ли им делить квартиру вместе."
+},
+{
+  title:"Lost in the Museum",
+  scenario:"A school trip goes wrong when a child wanders off in a natural history museum.",
+  error_count:7,
+  lines:[
+    {speaker:"Teacher",text:"Right, everyone stay together. We're going to the dinosaur hall."},
+    {speaker:"Milo",text:`I already <ERROR correct="went">goed</ERROR> there. I <ERROR correct="saw">seed</ERROR> a T-Rex that was bigger than our school bus.`},
+    {speaker:"Teacher",text:"Milo, where have you been? We've been looking for you for twenty minutes."},
+    {speaker:"Milo",text:`I <ERROR correct="hid">hided</ERROR> inside a mammoth exhibit because it <ERROR correct="felt">feeled</ERROR> safer in there.`},
+    {speaker:"Teacher",text:"That is not how museum visits work."},
+    {speaker:"Milo",text:`A security guard <ERROR correct="found">finded</ERROR> me. He <ERROR correct="gave">gived</ERROR> me a sticker and <ERROR correct="told">telled</ERROR> me I was the third child this week.`},
+    {speaker:"Teacher",text:"I genuinely don't know what to say."}
+  ],
+  summary:"Школьная экскурсия в музей идёт не по плану, когда ребёнок убегает и прячется внутри экспоната с мамонтом."
+},
+{
+  title:"The Cooking Class",
+  scenario:"An overconfident student attends his first professional cooking class.",
+  error_count:6,
+  lines:[
+    {speaker:"Chef",text:"Today we will make a classic French omelette. Please watch carefully."},
+    {speaker:"Student",text:`I <ERROR correct="made">maked</ERROR> one last week. I <ERROR correct="beat">beated</ERROR> the eggs with a fork for six minutes. Is that correct?`},
+    {speaker:"Chef",text:"Six minutes? That is... unusual. Did you enjoy it?"},
+    {speaker:"Student",text:`My cat <ERROR correct="ate">eated</ERROR> most of it. She <ERROR correct="left">leaved</ERROR> one bite which I <ERROR correct="gave">gaved</ERROR> to a pigeon.`},
+    {speaker:"Chef",text:"I see. Let's start from the beginning."},
+    {speaker:"Student",text:`I <ERROR correct="bought">buyed</ERROR> the most expensive eggs in the shop. They <ERROR correct="cost">costed</ERROR> twelve euros. Surely that helps?`},
+    {speaker:"Chef",text:"It does not help, no."}
+  ],
+  summary:"Самоуверенный студент приходит на свой первый профессиональный урок кулинарии и рассказывает о своём предыдущем кулинарном опыте с котом."
+},
+{
+  title:"The Great Escape",
+  scenario:"Two friends try to sneak out of a boring family dinner.",
+  error_count:6,
+  lines:[
+    {speaker:"Lea",text:`Have you <ERROR correct="spoken">speaked</ERROR> to your cousin about leaving early?`},
+    {speaker:"Joe",text:`I <ERROR correct="tried">try</ERROR> once but uncle Franz <ERROR correct="caught">catched</ERROR> me by the door and <ERROR correct="told">telled</ERROR> me about his stamp collection for forty minutes.`},
+    {speaker:"Lea",text:"We need a plan. I've already pretended to be ill twice this year."},
+    {speaker:"Joe",text:`Last time I <ERROR correct="said">sayed</ERROR> my cat was sick. Everyone <ERROR correct="knew">knowed</ERROR> I don't have a cat.`},
+    {speaker:"Lea",text:"Okay. I'll fake a phone call. You head to the door."},
+    {speaker:"Joe",text:`Perfect. I have <ERROR correct="done">did</ERROR> this in three countries. It always works.`},
+    {speaker:"Lea",text:"Why does your family travel so much?"},
+    {speaker:"Joe",text:"To be honest, mostly to escape each other."}
+  ],
+  summary:"Двое друзей пытаются незаметно сбежать со скучного семейного ужина."
+},
+{
+  title:"The Wrong Suitcase",
+  scenario:"A passenger realises at the airport hotel that she took the wrong suitcase.",
+  error_count:7,
+  lines:[
+    {speaker:"Rita",text:"This suitcase is not mine. I think I <ERROR correct=\"took\">taked</ERROR> the wrong one at baggage claim."},
+    {speaker:"Receptionist",text:"Oh dear. Do you know whose it is?"},
+    {speaker:"Rita",text:`There <ERROR correct="was">were</ERROR> a name tag but I <ERROR correct="lost">losed</ERROR> it in the taxi. Inside I <ERROR correct="found">finded</ERROR> seventeen identical grey jumpers.`},
+    {speaker:"Receptionist",text:"That is quite specific. Have you called the airline?"},
+    {speaker:"Rita",text:`I <ERROR correct="spoke">speaked</ERROR> to someone who <ERROR correct="put">putted</ERROR> me on hold for thirty minutes and then <ERROR correct="hung">hanged</ERROR> up.`},
+    {speaker:"Receptionist",text:"I see. Let me check our lost-luggage system."},
+    {speaker:"Rita",text:"Thank you. Also, one of the jumpers <ERROR correct=\"fits\">fit</ERROR> me perfectly. Is that morally relevant?"},
+    {speaker:"Receptionist",text:"I... don't think so. Let's focus on the system."}
+  ],
+  summary:"Пассажирка понимает в аэропортовом отеле, что взяла чужой чемодан с семнадцатью одинаковыми серыми свитерами."
+},
+{
+  title:"The Plant Sitter",
+  scenario:"A person calls their neighbour after returning from holiday to find their plants in unexpected condition.",
+  error_count:6,
+  lines:[
+    {speaker:"Anna",text:"Hi. I just got back. How are my plants?"},
+    {speaker:"Neighbour",text:"Oh! Yes. So. They're fine. Mostly."},
+    {speaker:"Anna",text:`What happened? You <ERROR correct="said">sayed</ERROR> you'd water them every three days.`},
+    {speaker:"Neighbour",text:`I <ERROR correct="forgot">forgetted</ERROR> for the first week. Then I <ERROR correct="overwatered">overwater</ERROR> them to compensate.`},
+    {speaker:"Anna",text:"And the cactus? I've had that cactus for nine years."},
+    {speaker:"Neighbour",text:`It <ERROR correct="fell">falled</ERROR> off the shelf. But I <ERROR correct="kept">keeped</ERROR> all the pieces in a box. Very organised.`},
+    {speaker:"Anna",text:"A box."},
+    {speaker:"Neighbour",text:`I also <ERROR correct="bought">buyed</ERROR> you a new plant. It's a plastic one. Much more resilient.`}
+  ],
+  summary:"Хозяйка растений звонит соседке после отпуска и узнаёт о судьбе своего девятилетнего кактуса."
+},
+{
+  title:"The Surprise Party",
+  scenario:"One friend accidentally ruins a surprise birthday party.",
+  error_count:6,
+  lines:[
+    {speaker:"Sam",text:`We <ERROR correct="hid">hided</ERROR> the balloons in the garage, <ERROR correct="wrote">writed</ERROR> Happy Birthday on forty sticky notes and <ERROR correct="bought">buyed</ERROR> a three-tiered cake.`},
+    {speaker:"Lena",text:"How did she not notice?"},
+    {speaker:"Sam",text:`She <ERROR correct="didn't see">don't saw</ERROR> a thing. Everything <ERROR correct="went">go</ERROR> perfectly until you <ERROR correct="sent">sended</ERROR> her a text saying 'don't look in the garage'.`},
+    {speaker:"Lena",text:"I panicked! I thought she had already found the cake!"},
+    {speaker:"Sam",text:"She hadn't! She was sitting in the garden reading a book!"},
+    {speaker:"Lena",text:`In my defence, I have <ERROR correct="kept">keeped</ERROR> this secret for six weeks. Six weeks is a long time.`},
+    {speaker:"Sam",text:"She enjoyed the party anyway."},
+    {speaker:"Lena",text:"Honestly, the look on her face when she read my text was the best part."}
+  ],
+  summary:"Один друг случайно раскрывает сюрприз, отправив хозяйке вечеринки сообщение 'не заглядывай в гараж'."
+}
+];
+
+// ── BANK: BUILDER ─────────────────────────────────────
+const PR_BUILDER=[
+{
+  title:"Sentence Builder — Space & Adventure",
+  sentences:[
+    {words:["The","astronaut","had","never","eaten","sushi","in","zero","gravity","before"],correct:"the astronaut had never eaten sushi in zero gravity before",ru:"Астронавт никогда раньше не ел суши в невесомости.",verb:"eat",tense:"Past Perfect"},
+    {words:["She","drove","the","solar-powered","car","across","the","Sahara","Desert"],correct:"she drove the solar-powered car across the sahara desert",ru:"Она проехала на машине с солнечными батареями через пустыню Сахара.",verb:"drive",tense:"Past Simple"},
+    {words:["They","had","never","seen","such","a","large","crowd","in","their","lives"],correct:"they had never seen such a large crowd in their lives",ru:"Они никогда в жизни не видели такой большой толпы.",verb:"see",tense:"Past Perfect"},
+    {words:["The","explorer","lost","his","map","but","found","a","shortcut","instead"],correct:"the explorer lost his map but found a shortcut instead",ru:"Исследователь потерял карту, но вместо этого нашёл короткий путь.",verb:"find",tense:"Past Simple"},
+    {words:["By","midnight","the","whole","crew","had","fallen","asleep","on","the","deck"],correct:"by midnight the whole crew had fallen asleep on the deck",ru:"К полуночи вся команда уснула на палубе.",verb:"fall",tense:"Past Perfect"}
+  ]
+},
+{
+  title:"Sentence Builder — City Life",
+  sentences:[
+    {words:["He","ran","for","the","bus","but","it","had","already","gone"],correct:"he ran for the bus but it had already gone",ru:"Он бежал за автобусом, но тот уже уехал.",verb:"go",tense:"Past Perfect"},
+    {words:["The","architect","built","the","bridge","in","under","six","months"],correct:"the architect built the bridge in under six months",ru:"Архитектор построил мост менее чем за шесть месяцев.",verb:"build",tense:"Past Simple"},
+    {words:["Someone","had","stolen","her","bicycle","from","outside","the","library"],correct:"someone had stolen her bicycle from outside the library",ru:"Кто-то украл её велосипед возле библиотеки.",verb:"steal",tense:"Past Perfect"},
+    {words:["The","street","musicians","sang","for","three","hours","without","a","break"],correct:"the street musicians sang for three hours without a break",ru:"Уличные музыканты пели три часа без перерыва.",verb:"sing",tense:"Past Simple"},
+    {words:["By","the","time","she","arrived","he","had","already","paid","the","bill"],correct:"by the time she arrived he had already paid the bill",ru:"К тому времени как она пришла, он уже оплатил счёт.",verb:"pay",tense:"Past Perfect"}
+  ]
+},
+{
+  title:"Sentence Builder — Work & Money",
+  sentences:[
+    {words:["The","company","sold","all","its","shares","in","one","afternoon"],correct:"the company sold all its shares in one afternoon",ru:"Компания продала все свои акции за один день.",verb:"sell",tense:"Past Simple"},
+    {words:["She","had","spent","her","entire","savings","on","a","vintage","typewriter"],correct:"she had spent her entire savings on a vintage typewriter",ru:"Она потратила все свои сбережения на старинную печатную машинку.",verb:"spend",tense:"Past Perfect"},
+    {words:["The","manager","gave","every","employee","an","extra","day","off"],correct:"the manager gave every employee an extra day off",ru:"Менеджер дал каждому сотруднику дополнительный выходной день.",verb:"give",tense:"Past Simple"},
+    {words:["They","had","already","made","a","deal","before","the","meeting","began"],correct:"they had already made a deal before the meeting began",ru:"Они уже заключили сделку до начала встречи.",verb:"make",tense:"Past Perfect"},
+    {words:["He","took","the","wrong","file","to","the","most","important","meeting"],correct:"he took the wrong file to the most important meeting",ru:"Он взял не тот файл на самую важную встречу.",verb:"take",tense:"Past Simple"}
+  ]
+},
+{
+  title:"Sentence Builder — Nature & Travel",
+  sentences:[
+    {words:["The","whale","swam","alongside","our","boat","for","nearly","an","hour"],correct:"the whale swam alongside our boat for nearly an hour",ru:"Кит плыл рядом с нашей лодкой почти час.",verb:"swim",tense:"Past Simple"},
+    {words:["She","had","flown","to","over","forty","countries","by","the","age","of","thirty"],correct:"she had flown to over forty countries by the age of thirty",ru:"К тридцати годам она побывала более чем в сорока странах.",verb:"fly",tense:"Past Perfect"},
+    {words:["The","volcano","had","been","sleeping","for","centuries","before","it","woke"],correct:"the volcano had been sleeping for centuries before it woke",ru:"Вулкан спал веками, прежде чем проснулся.",verb:"wake",tense:"Past Perfect"},
+    {words:["Strong","winds","blew","the","tent","across","the","entire","campsite"],correct:"strong winds blew the tent across the entire campsite",ru:"Сильный ветер унёс палатку по всей территории кемпинга.",verb:"blow",tense:"Past Simple"},
+    {words:["The","river","rose","by","two","metres","overnight","and","flooded","the","valley"],correct:"the river rose by two metres overnight and flooded the valley",ru:"За ночь река поднялась на два метра и затопила долину.",verb:"rise",tense:"Past Simple"}
+  ]
+},
+{
+  title:"Sentence Builder — Technology",
+  sentences:[
+    {words:["The","programmer","wrote","the","entire","app","in","a","single","weekend"],correct:"the programmer wrote the entire app in a single weekend",ru:"Программист написал всё приложение за один выходной.",verb:"write",tense:"Past Simple"},
+    {words:["The","robot","had","already","broken","three","machines","by","lunchtime"],correct:"the robot had already broken three machines by lunchtime",ru:"К обеду робот уже сломал три машины.",verb:"break",tense:"Past Perfect"},
+    {words:["She","kept","all","her","old","phones","in","a","drawer","for","years"],correct:"she kept all her old phones in a drawer for years",ru:"Годами она хранила все свои старые телефоны в ящике.",verb:"keep",tense:"Past Simple"},
+    {words:["The","update","had","already","begun","when","the","power","went","out"],correct:"the update had already begun when the power went out",ru:"Обновление уже началось, когда отключили электричество.",verb:"begin",tense:"Past Perfect"},
+    {words:["He","sent","the","email","to","the","wrong","department","three","times","in","a","row"],correct:"he sent the email to the wrong department three times in a row",ru:"Он отправил письмо не в тот отдел три раза подряд.",verb:"send",tense:"Past Simple"}
+  ]
+}
+];
+
+// ── BANK: TRANSLATE ───────────────────────────────────
+const PR_TRANSLATE=[
+{
+  title:"Translation — Everyday Chaos",
+  items:[
+    {ru:"Вчера она случайно отправила своему боссу фото кота вместо отчёта.",en_answer:"Yesterday she accidentally sent her boss a photo of her cat instead of the report.",verb:"send",key_form:"sent",tense:"Past Simple",hint:"send → sent → sent"},
+    {ru:"Он сломал четыре чашки, пытаясь произвести впечатление на гостей.",en_answer:"He broke four cups trying to impress the guests.",verb:"break",key_form:"broke",tense:"Past Simple",hint:"break → broke → broken"},
+    {ru:"Мы потратили всё утро, разыскивая ключи, которые были у него в кармане.",en_answer:"We spent all morning looking for the keys that were in his pocket.",verb:"spend",key_form:"spent",tense:"Past Simple",hint:"spend → spent → spent"},
+    {ru:"К тому времени как я нашла билет, поезд уже ушёл.",en_answer:"By the time I found the ticket, the train had already gone.",verb:"find",key_form:"found",tense:"Past Perfect",hint:"find → found → found"},
+    {ru:"Она никогда не носила шляп до тех пор, пока не переехала в Лондон.",en_answer:"She had never worn a hat until she moved to London.",verb:"wear",key_form:"worn",tense:"Past Perfect",hint:"wear → wore → worn"},
+    {ru:"Он выиграл приз, о котором даже не просил.",en_answer:"He won a prize he never even asked for.",verb:"win",key_form:"won",tense:"Past Simple",hint:"win → won → won"}
+  ]
+},
+{
+  title:"Translation — News Headlines",
+  items:[
+    {ru:"Команда побила рекорд, который держался двадцать лет.",en_answer:"The team broke the record that had stood for twenty years.",verb:"break",key_form:"broke",tense:"Past Simple",hint:"break → broke → broken"},
+    {ru:"Правительство продало здание, которое оно строило двадцать лет.",en_answer:"The government sold the building it had been building for twenty years.",verb:"sell",key_form:"sold",tense:"Past Simple",hint:"sell → sold → sold"},
+    {ru:"Учёные нашли новый вид рыб на глубине четырёх тысяч метров.",en_answer:"Scientists found a new species of fish at a depth of four thousand metres.",verb:"find",key_form:"found",tense:"Past Simple",hint:"find → found → found"},
+    {ru:"Художник написал портрет за восемь минут и продал его за миллион.",en_answer:"The artist wrote — no, drew the portrait in eight minutes and sold it for a million.",verb:"sell",key_form:"sold",tense:"Past Simple",hint:"sell → sold → sold"},
+    {ru:"С тех пор как она стала директором, прибыль выросла на сорок процентов.",en_answer:"Since she became director, profits have grown by forty percent.",verb:"grow",key_form:"grown",tense:"Present Perfect",hint:"grow → grew → grown"},
+    {ru:"Они удерживали мировой рекорд в течение восьми лет.",en_answer:"They held the world record for eight years.",verb:"hold",key_form:"held",tense:"Past Simple",hint:"hold → held → held"}
+  ]
+},
+{
+  title:"Translation — Personal Stories",
+  items:[
+    {ru:"Он встретил свою будущую жену в очереди за кофе.",en_answer:"He met his future wife in the queue for coffee.",verb:"meet",key_form:"met",tense:"Past Simple",hint:"meet → met → met"},
+    {ru:"Она помнила всё, что когда-либо читала, и это пугало людей.",en_answer:"She remembered everything she had ever read, and it frightened people.",verb:"read",key_form:"read",tense:"Past Perfect",hint:"read → read → read"},
+    {ru:"Я никогда не думал, что когда-нибудь буду жить за границей.",en_answer:"I never thought I would ever live abroad.",verb:"think",key_form:"thought",tense:"Past Simple",hint:"think → thought → thought"},
+    {ru:"К тому времени как я купил билет, все места уже были заняты.",en_answer:"By the time I bought the ticket, all the seats had already been taken.",verb:"buy",key_form:"bought",tense:"Past Simple",hint:"buy → bought → bought"},
+    {ru:"Она вела дневник каждый день в течение двадцати лет, а потом вдруг остановилась.",en_answer:"She kept a diary every day for twenty years and then suddenly stopped.",verb:"keep",key_form:"kept",tense:"Past Simple",hint:"keep → kept → kept"},
+    {ru:"Он лёг поздно и проспал самый важный звонок в своей жизни.",en_answer:"He went to bed late and slept through the most important call of his life.",verb:"sleep",key_form:"slept",tense:"Past Simple",hint:"sleep → slept → slept"}
+  ]
+},
+{
+  title:"Translation — Science & Discovery",
+  items:[
+    {ru:"Исследователь понял, что уже бывал в этом месте, хотя карта говорила обратное.",en_answer:"The explorer understood he had been to this place before, even though the map said otherwise.",verb:"understand",key_form:"understood",tense:"Past Simple",hint:"understand → understood → understood"},
+    {ru:"Она выросла в доме без книг и стала величайшим писателем своего поколения.",en_answer:"She grew up in a house with no books and became the greatest writer of her generation.",verb:"grow",key_form:"grew",tense:"Past Simple",hint:"grow → grew → grown"},
+    {ru:"Они прилетели на остров и обнаружили, что вулкан уже начал извергаться.",en_answer:"They flew to the island and discovered that the volcano had already begun to erupt.",verb:"fly",key_form:"flew",tense:"Past Simple",hint:"fly → flew → flown"},
+    {ru:"Пациент встал раньше, чем доктор сказал ему это сделать.",en_answer:"The patient rose before the doctor told him to.",verb:"rise",key_form:"rose",tense:"Past Simple",hint:"rise → rose → risen"},
+    {ru:"К 1950 году человечество уже расщепило атом, но ещё не бывало в космосе.",en_answer:"By 1950 humanity had already split the atom but had not yet been to space.",verb:"be",key_form:"been",tense:"Past Perfect",hint:"be → was/were → been"},
+    {ru:"Температура упала на десять градусов, и озеро замёрзло за одну ночь.",en_answer:"The temperature fell by ten degrees and the lake froze overnight.",verb:"freeze",key_form:"froze",tense:"Past Simple",hint:"freeze → froze → frozen"}
+  ]
+}
+];
+
+// ── BANK: CHOOSER ─────────────────────────────────────
+const PR_CHOOSER=[
+{
+  title:"Context Chooser — Actions",
+  items:[
+    {verb:"steal",ru:"красть, воровать",options:[
+      {text:"The comedian stole the show last night — nobody could stop laughing, and even the headline act applauded.",correct:true},
+      {text:"The comedian had stealed every joke from the internet. The audience had already heard them all.",correct:false,error:"'stealed' is not a word — the past tense is 'stole', past participle is 'stolen'"},
+      {text:"He steal her heart the moment he walked on stage.",correct:false,error:"'steal' should be 'stole' (past simple) — base form can't be used here"}
+    ]},
+    {verb:"break",ru:"ломать, нарушать",options:[
+      {text:"The young athlete broke three national records in a single afternoon, then calmly asked where the canteen was.",correct:true},
+      {text:"The window was breaked by a football kicked from three streets away.",correct:false,error:"'breaked' doesn't exist — the past participle is 'broken': 'was broken'"},
+      {text:"She break the ice at every awkward dinner party by announcing she collects spoons.",correct:false,error:"'break' should be 'breaks' (present simple, third person) or 'broke' (past simple)"}
+    ]},
+    {verb:"keep",ru:"хранить, сохранять",options:[
+      {text:"He had kept every letter she ever sent him, stacked in shoe boxes in a wardrobe nobody else was allowed to open.",correct:true},
+      {text:"She keeped all her old concert tickets in an album. There were over three hundred of them.",correct:false,error:"'keeped' is incorrect — the past tense is 'kept'"},
+      {text:"The temperature keeps to drop every night this week, despite the warm forecast.",correct:false,error:"'keeps to drop' is unnatural — say 'keeps dropping'"}
+    ]},
+    {verb:"hold",ru:"держать, проводить (мероприятие)",options:[
+      {text:"The festival has been held on this hillside every summer for over a century, rain or shine.",correct:true},
+      {text:"The record holded by the previous champion was finally broken last Tuesday.",correct:false,error:"'holded' doesn't exist — use 'held': 'The record held by...'"},
+      {text:"She hold her breath for two minutes during the underwater photography class.",correct:false,error:"'hold' should be 'held' (past simple)"}
+    ]}
+  ]
+},
+{
+  title:"Context Chooser — Movement",
+  items:[
+    {verb:"fly",ru:"летать",options:[
+      {text:"The stunt pilot had flown over a hundred shows before she landed the plane upside down — on purpose — at the air show finale.",correct:true},
+      {text:"The documents flied across the office when someone left the window open during the board meeting.",correct:false,error:"'flied' is used only in baseball (fly ball). For movement, use 'flew'"},
+      {text:"She has flew to Tokyo seven times this year. She earns double the air miles of anyone else in the office.",correct:false,error:"'has flew' is incorrect — use 'has flown' (present perfect)"}
+    ]},
+    {verb:"rise",ru:"подниматься, расти",options:[
+      {text:"Prices had risen by thirty percent before anyone in the government noticed the shopping receipts people were posting online.",correct:true},
+      {text:"The sun rised at 4:47 a.m. on midsummer morning, waking every early bird in the valley.",correct:false,error:"'rised' doesn't exist — the past tense is 'rose'"},
+      {text:"He has risen to the challenge by going back to sleep and hoping it resolves itself.",correct:false,error:"Grammatically possible but contextually contradictory — 'risen to the challenge' means to meet it, not avoid it"}
+    ]},
+    {verb:"sink",ru:"тонуть, падать",options:[
+      {text:"The ship had sunk long before the rescue boats arrived, leaving only a circle of floating debris.",correct:true},
+      {text:"His heart sinked when he saw the exam results posted on the door.",correct:false,error:"'sinked' doesn't exist — use 'sank' (past simple) or 'sunk' (past participle)"},
+      {text:"Property values have sunken dramatically in the area since the factory closed.",correct:false,error:"'sunken' is mainly used as an adjective (sunken eyes). Use 'fallen' or 'sunk' here"}
+    ]},
+    {verb:"come",ru:"приходить, прибывать",options:[
+      {text:"She had come all the way from Auckland for the concert, only to find it had been rescheduled to the following week.",correct:true},
+      {text:"The package comed yesterday, three weeks after it was dispatched from the warehouse.",correct:false,error:"'comed' doesn't exist — the past tense is 'came'"},
+      {text:"They have came to the same café every Sunday for fifteen years.",correct:false,error:"'have came' is wrong — use 'have come' (present perfect)"}
+    ]}
+  ]
+},
+{
+  title:"Context Chooser — Mind & Senses",
+  items:[
+    {verb:"forget",ru:"забывать",options:[
+      {text:"He had forgotten more languages than most people ever learn — a side effect of an extraordinarily overcrowded memory.",correct:true},
+      {text:"She forgotted to water the plant for a month, which is why it now looks philosophical.",correct:false,error:"'forgotted' doesn't exist — the past tense is 'forgot'"},
+      {text:"I have forgot your name three times now. It's not personal, I promise.",correct:false,error:"'have forgot' is incorrect — use 'have forgotten' (present perfect)"}
+    ]},
+    {verb:"know",ru:"знать",options:[
+      {text:"By the time she was twelve she already knew how to repair a car engine, speak three languages, and make perfect croissants.",correct:true},
+      {text:"He knowed the answer immediately but waited ten seconds before answering to seem thoughtful.",correct:false,error:"'knowed' doesn't exist — the past tense is 'knew'"},
+      {text:"She has knew him for years but still forgets his birthday every single time.",correct:false,error:"'has knew' is wrong — use 'has known' (present perfect)"}
+    ]},
+    {verb:"understand",ru:"понимать",options:[
+      {text:"Nobody in the room had understood the final slide, but everyone nodded confidently and headed for the coffee.",correct:true},
+      {text:"He understanded the instructions perfectly but chose to ignore them for creative reasons.",correct:false,error:"'understanded' doesn't exist — use 'understood'"},
+      {text:"She has understand every word of the lecture, which is why she looks so smug.",correct:false,error:"'has understand' is wrong — use 'has understood' (present perfect)"}
+    ]},
+    {verb:"think",ru:"думать, считать",options:[
+      {text:"Everyone had thought the project was doomed, which made the final result even more spectacular.",correct:true},
+      {text:"I thinked about it all night and still don't have an answer, which is probably the answer.",correct:false,error:"'thinked' doesn't exist — the past tense is 'thought'"},
+      {text:"She has thought to apply for the position but hasn't made up her mind.",correct:false,error:"'has thought to' is unnatural — say 'has been thinking of applying' or 'thought about applying'"}
+    ]}
+  ]
+},
+{
+  title:"Context Chooser — Making Things",
+  items:[
+    {verb:"build",ru:"строить, создавать",options:[
+      {text:"The community had built the library themselves over three years, one donated brick at a time.",correct:true},
+      {text:"They builded a treehouse in a single afternoon. It collapsed by the following morning.",correct:false,error:"'builded' doesn't exist — the past tense is 'built'"},
+      {text:"She has build her reputation on being brutally honest, which has won her few friends and many admirers.",correct:false,error:"'has build' is wrong — use 'has built' (present perfect)"}
+    ]},
+    {verb:"write",ru:"писать",options:[
+      {text:"She had written seventeen novels before she wrote the one that made everyone forget the other sixteen.",correct:true},
+      {text:"He writed his resignation letter three times before finally deleting all three drafts.",correct:false,error:"'writed' doesn't exist — the past tense is 'wrote'"},
+      {text:"The journalist has wrote about this topic for twenty years and is still not sure what to think.",correct:false,error:"'has wrote' is wrong — use 'has written' (present perfect)"}
+    ]},
+    {verb:"make",ru:"делать, создавать",options:[
+      {text:"By noon the chef had made enough pasta to feed the entire neighbourhood — twice.",correct:true},
+      {text:"She maked a decision she immediately regretted, as is tradition.",correct:false,error:"'maked' doesn't exist — the past tense is 'made'"},
+      {text:"He has make the same mistake four times. Some people call it stubbornness; he calls it research.",correct:false,error:"'has make' is wrong — use 'has made' (present perfect)"}
+    ]},
+    {verb:"draw",ru:"рисовать, чертить",options:[
+      {text:"The architect had drawn a hundred versions of the building before the client said they actually wanted a car park.",correct:true},
+      {text:"She drawed a portrait of her cat in ten minutes. The cat was unimpressed.",correct:false,error:"'drawed' doesn't exist — the past tense is 'drew'"},
+      {text:"He has drew this route from memory every time someone asks for directions.",correct:false,error:"'has drew' is wrong — use 'has drawn' (present perfect)"}
+    ]}
+  ]
+}
+];
+
+// ── BANK: DETECTIVE ───────────────────────────────────
+const PR_DETECTIVE=[
+{
+  title:"The Vanishing Violinist",
+  type_label:"Mystery Article",
+  error_count:7,
+  summary:"Статья о знаменитом скрипаче, который исчез со сцены в разгаре концерта и был найден три дня спустя на рыбацкой лодке.",
+  paragraphs:[
+    `Last Thursday evening the internationally <dt-ok>celebrated</dt-ok> violinist Marco Bellini <ERROR correct="walked">walked</ERROR> onto the stage at the Grand Palais to thunderous applause. He had <ERROR correct="performed">performed</ERROR> in this very hall dozens of times, and the audience had <ERROR correct="come">came</ERROR> from across Europe to hear him play.`,
+    `Halfway through the second movement something extraordinary happened. Bellini <ERROR correct="stopped">stoped</ERROR>, placed his violin on the conductor's stand, and <ERROR correct="walked">walked</ERROR> — calmly, unhurriedly — straight off the stage and out of the building. The audience <ERROR correct="sat">sit</ERROR> in stunned silence for several minutes before anyone reacted.`,
+    `The police were called. Officers <ERROR correct="searched">searched</ERROR> the building, <ERROR correct="spoke">speaked</ERROR> to dozens of witnesses, and <ERROR correct="checked">checked</ERROR> every exit camera. Nobody had <ERROR correct="seen">saw</ERROR> where he went. His coat, his phone, and his passport had all been <ERROR correct="left">left</ERROR> in the dressing room.`,
+    `Three days later a fisherman on the Normandy coast <ERROR correct="found">found</ERROR> Bellini sitting in a rowing boat, reading a novel and eating cheese. He said he had simply <ERROR correct="needed">needed</ERROR> some air. He has since <ERROR correct="given">gave</ERROR> three interviews and returned to touring. His next concert sold out in four minutes.`
+  ]
+},
+{
+  title:"The World's Longest Meeting",
+  type_label:"Satirical News",
+  error_count:7,
+  summary:"Сатирическая заметка о совещании, которое продолжалось одиннадцать дней, потому что никто не решался его закончить.",
+  paragraphs:[
+    `A departmental meeting that <ERROR correct="began">begun</ERROR> on a Monday morning in the offices of a mid-sized logistics company has now <ERROR correct="entered">entered</ERROR> its eleventh consecutive day. The original agenda, which had been <ERROR correct="written">wrote</ERROR> on a single Post-it note, listed two items: biscuit policy and car park allocation.`,
+    `By day three the meeting had <ERROR correct="grown">growed</ERROR> from six attendees to twenty-two. People had <ERROR correct="brought">bringed</ERROR> sleeping bags, laptops, and, in one case, a houseplant. The managing director, who had <ERROR correct="flown">flew</ERROR> in from Amsterdam especially, reportedly <ERROR correct="wept">wept</ERROR> quietly on day five.`,
+    `On day seven the group <ERROR correct="made">maked</ERROR> a formal decision about biscuits: plain digestives only, bought in bulk. The car park issue <ERROR correct="remained">remained</ERROR> unresolved because nobody could agree whether motorcycles counted as half a car or a quarter of a car.`,
+    `At time of publication, the meeting is still ongoing. Three people have <ERROR correct="left">leaved</ERROR> to attend other meetings, which reportedly have also <ERROR correct="become">became</ERROR> infinite. The company's biscuit supplier has <ERROR correct="seen">saw</ERROR> a thirty percent increase in orders.`
+  ]
+},
+{
+  title:"The Library That Remembered Everything",
+  type_label:"Short Story",
+  error_count:7,
+  summary:"Рассказ о библиотеке, которая помнит каждую книгу, когда-либо прочитанную в её стенах, и читательнице, которая обнаруживает этот секрет.",
+  paragraphs:[
+    `The library on Mira Street had <ERROR correct="stood">stand</ERROR> for a hundred and forty years. Every librarian who had ever <ERROR correct="worked">worked</ERROR> there had noticed it: the building remembered. Not metaphorically — it actually <ERROR correct="kept">keeped</ERROR> records. Every book that had been <ERROR correct="read">readed</ERROR> within its walls had left a trace, a faint warmth in the page.`,
+    `Elena <ERROR correct="found">finded</ERROR> this out by accident on a Tuesday afternoon. She had <ERROR correct="taken">took</ERROR> a copy of a novel off the shelf when the pages began to glow faintly amber. She <ERROR correct="put">putted</ERROR> it down, then picked it up again. The glow remained.`,
+    `The head librarian, who had <ERROR correct="known">knowed</ERROR> about this for decades, explained the situation over tea. Each book <ERROR correct="held">holded</ERROR> the memory of every person who had <ERROR correct="sat">sat</ERROR> with it. Elena <ERROR correct="spent">spendt</ERROR> the rest of the afternoon reading not the words on the page, but the warmth between them.`,
+    `She <ERROR correct="came">come</ERROR> back every week after that. In time she <ERROR correct="became">become</ERROR> the head librarian herself. She never <ERROR correct="told">telled</ERROR> anyone about the warmth, but she always made sure the heating was kept low so people would stay a little longer.`
+  ]
+},
+{
+  title:"The Last Post Office",
+  type_label:"Human Interest Story",
+  error_count:7,
+  summary:"История о последнем почтовом отделении в маленьком городке и почтальоне, проработавшем там сорок лет.",
+  paragraphs:[
+    `For forty years Albert Moss had <ERROR correct="run">ran</ERROR> the post office on the main street of the small town of Ashwick. He had <ERROR correct="seen">saw</ERROR> the town change around him: the bakery became a gym, the cinema became a car park, and the town itself <ERROR correct="shrank">shrinked</ERROR> slowly, like a jumper washed at the wrong temperature.`,
+    `Every morning Albert <ERROR correct="rose">raised</ERROR> at five, <ERROR correct="rode">rided</ERROR> his bicycle down the hill, and <ERROR correct="unlocked">unlocked</ERROR> the post office at exactly six-fifteen. He had never <ERROR correct="been">be</ERROR> late. Not once, in forty years.`,
+    `Last year the company that <ERROR correct="owned">owned</ERROR> the building <ERROR correct="sold">selled</ERROR> it to a coffee chain. Albert <ERROR correct="was">were</ERROR> given six weeks' notice. On his last day, the entire town turned out. Someone had <ERROR correct="made">maked</ERROR> a cake in the shape of a post box. It had been <ERROR correct="kept">keeping</ERROR> warm in a neighbour's oven.`,
+    `Albert <ERROR correct="cut">cutted</ERROR> the cake, <ERROR correct="shook">shaked</ERROR> a hundred hands, and <ERROR correct="rode">rided</ERROR> his bicycle home for the last time as postmaster. The post office <ERROR correct="became">become</ERROR> a coffee shop the following month. The new owners <ERROR correct="kept">keep</ERROR> his bicycle propped against the wall by the door.`
+  ]
+},
+{
+  title:"The Competitive Grandmothers",
+  type_label:"Lifestyle Feature",
+  error_count:7,
+  summary:"Лёгкий материал о бабушках, которые соревнуются друг с другом в вязании, кулинарии и ботанике уже пятьдесят лет.",
+  paragraphs:[
+    `Marta and Irene have <ERROR correct="known">knew</ERROR> each other for fifty-one years. They <ERROR correct="met">meeted</ERROR> at a knitting circle in 1973, immediately <ERROR correct="became">become</ERROR> best friends, and have <ERROR correct="competed">compete</ERROR> with each other every single day since.`,
+    `The competition <ERROR correct="began">begun</ERROR> modestly — whose jam <ERROR correct="set">setted</ERROR> firmer, whose hydrangeas grew tallest. Over the decades it has <ERROR correct="grown">growed</ERROR> to encompass crossword times, the accuracy of weather predictions, and, since 2019, the number of languages <ERROR correct="spoken">spoke</ERROR> to delivery drivers.`,
+    `Last spring Marta <ERROR correct="won">winned</ERROR> the Regional Baking Championship for the fourth consecutive year. She had <ERROR correct="kept">keeped</ERROR> the trophy in Irene's eyeline from the window of her kitchen. Irene countered by winning the Vegetable Growers' Cup and <ERROR correct="placing">place</ERROR> the certificate in an even more prominent position.`,
+    `Both women insist they are simply good friends who happen to be competitive. Their families, who have <ERROR correct="grown">growed</ERROR> up watching this, describe it differently. Marta's granddaughter <ERROR correct="put">putted</ERROR> it best: "They've <ERROR correct="kept">keep</ERROR> each other alive out of sheer determination not to lose."`
+  ]
+},
+{
+  title:"The Island That Moved",
+  type_label:"Science Correspondent",
+  error_count:8,
+  summary:"Научная статья об острове в Тихом океане, который незаметно сместился на несколько километров, что обнаружили учёные.",
+  paragraphs:[
+    `Scientists have <ERROR correct="found">finded</ERROR> that a small island in the South Pacific has <ERROR correct="moved">moved</ERROR> approximately three kilometres from its charted position over the past century. The island, which <ERROR correct="sits">sat</ERROR> on a slow-moving tectonic plate, has effectively <ERROR correct="been">been</ERROR> drifting westward at a rate invisible to the naked eye.`,
+    `The discovery was <ERROR correct="made">maked</ERROR> by a graduate student who <ERROR correct="noticed">noticed</ERROR> a discrepancy between historical maps and current satellite data. She <ERROR correct="thought">thinked</ERROR> at first it was a measurement error, but the pattern <ERROR correct="held">holded</ERROR> across twelve independent datasets.`,
+    `Researchers who <ERROR correct="flew">flown</ERROR> to the island in March <ERROR correct="spent">spended</ERROR> three weeks taking measurements. They also <ERROR correct="spoke">speaked</ERROR> to the island's inhabitants, who had always <ERROR correct="known">knew</ERROR> that the view from the eastern shore had changed since their grandparents' time.`,
+    `The island's position will be <ERROR correct="updated">updated</ERROR> on all navigation charts by the end of the year. Local authorities have <ERROR correct="taken">took</ERROR> the news calmly. The mayor, who has <ERROR correct="lived">lived</ERROR> there his entire life, reportedly <ERROR correct="said">sayed</ERROR>: "We always <ERROR correct="knew">knowed</ERROR> we were going somewhere. We just didn't know where."`
+  ]
+}
+];
+
+// ── PRACTICE ENGINE ───────────────────────────────────
+function prSelectType(btn){
+  document.querySelectorAll('.pr-type-btn').forEach(b=>b.classList.remove('sel'));
+  btn.classList.add('sel');prCurrentType=btn.dataset.type;
+}
+function prBackToLobby(){
+  document.getElementById('pr-exercise').classList.add('hidden');
+  document.getElementById('pr-lobby').classList.remove('hidden');
+}
+function init_practice(){
+  document.getElementById('pr-lobby').classList.remove('hidden');
+  document.getElementById('pr-exercise').classList.add('hidden');
+  document.getElementById('pr-result').classList.add('hidden');
+  document.getElementById('pr-action-btns').classList.add('hidden');
+}
+function prPickExercise(bank){
+  const used=prUsedIdx[prCurrentType];
+  if(used.length>=bank.length)prUsedIdx[prCurrentType]=[];
+  const avail=bank.map((_,i)=>i).filter(i=>!prUsedIdx[prCurrentType].includes(i));
+  const idx=avail[Math.floor(Math.random()*avail.length)];
+  prUsedIdx[prCurrentType].push(idx);
+  return bank[idx];
+}
+function prLaunch(){
+  const banks={gap:PR_GAP,dialogue:PR_DIALOGUE,builder:PR_BUILDER,translate:PR_TRANSLATE,chooser:PR_CHOOSER,detective:PR_DETECTIVE};
+  const ex=prPickExercise(banks[prCurrentType]);
+  prCurrentExercise={type:prCurrentType,data:ex};
+  document.getElementById('pr-lobby').classList.add('hidden');
+  const exEl=document.getElementById('pr-exercise');exEl.classList.remove('hidden');
+  document.getElementById('pr-result').classList.add('hidden');
+  document.getElementById('pr-action-btns').classList.add('hidden');
+  const typeLabels={gap:'📖 Story Gap-fill',dialogue:'💬 Dialogue Repair',builder:'🔧 Sentence Builder',translate:'🌐 Translation',chooser:'🎯 Context Chooser',detective:'🔍 Tense Detective'};
+  document.getElementById('pr-ex-badge').textContent=typeLabels[prCurrentType]||prCurrentType;
+  document.getElementById('pr-content').innerHTML='';
+  if(prCurrentType==='gap') prRenderGap(ex);
+  else if(prCurrentType==='dialogue') prRenderDialogue(ex);
+  else if(prCurrentType==='builder') prRenderBuilder(ex);
+  else if(prCurrentType==='translate') prRenderTranslate(ex);
+  else if(prCurrentType==='chooser') prRenderChooser(ex);
+  else if(prCurrentType==='detective') prRenderDetective(ex);
+}
+
+// ── GAP FILL ──────────────────────────────────────────
+function prRenderGap(ex){
+  const c=document.getElementById('pr-content');
+  const h=document.createElement('h3');h.style.cssText='font-size:18px;font-weight:800;margin-bottom:1rem;letter-spacing:-.5px';h.textContent=ex.title;c.appendChild(h);
+  const story=document.createElement('div');story.className='pr-story';
+  (ex.paragraphs||[]).forEach(para=>{
+    const p=document.createElement('p');
+    const parts=para.split(/(<BLANK:[^>]+>)/);
+    parts.forEach(part=>{
+      const m=part.match(/<BLANK:([^:]+):([^:]+):([^|]+)\|([^>]+)>/);
+      if(m){
+        const[,answer,inf,tense,choicesStr]=m;
+        const choices=choicesStr.split('|');
+        const wrap=document.createElement('span');wrap.className='gap-wrap';
+        const row=document.createElement('span');row.className='gap-choice-row';
+        choices.forEach(ch=>{
+          const pill=document.createElement('span');pill.className='gap-pill';pill.textContent=ch;pill.dataset.correct=ch===answer?'1':'0';pill.dataset.answer=answer;
+          pill.onclick=()=>gapPillClick(pill,row,answer);row.appendChild(pill);
+        });
+        wrap.appendChild(row);p.appendChild(wrap);
+      } else if(part){p.appendChild(document.createTextNode(part));}
+    });
+    story.appendChild(p);
+  });
+  c.appendChild(story);
+  if(ex.translation){const tr=document.createElement('details');tr.style.cssText='margin-top:.85rem;font-size:13px;color:var(--muted)';tr.innerHTML='<summary style="cursor:pointer;font-weight:600;color:var(--hint)">Show Russian translation &#x25BE;</summary><div style="margin-top:.5rem;line-height:1.8">'+ex.translation.replace(/\n/g,'<br>')+'</div>';c.appendChild(tr);}
+}
+function gapPillClick(pill,row,answer){
+  if(row.querySelector('.chosen-ok,.chosen-bad'))return;
+  const ok=pill.dataset.correct==='1';
+  pill.className='gap-pill '+(ok?'chosen-ok':'chosen-bad');
+  if(!ok)row.querySelectorAll('.gap-pill').forEach(p=>{if(p.dataset.correct==='1')p.className='gap-pill reveal';});
+  const v=VERBS.find(x=>x.v2===answer||x.v3===answer||x.v1===answer);if(v)recordResult(v,ok);if(ok)addScore(1);
+  checkAllGapsDone();
+}
+function checkAllGapsDone(){
+  const all=document.querySelectorAll('.gap-choice-row');
+  const done=[...all].every(r=>r.querySelector('.chosen-ok,.chosen-bad'));
+  if(done){const ok=[...all].filter(r=>r.querySelector('.chosen-ok')).length;prShowResult(ok,all.length,'gap');}
+}
+
+// ── DIALOGUE ──────────────────────────────────────────
+function prRenderDialogue(ex){
+  const c=document.getElementById('pr-content');
+  const h=document.createElement('h3');h.style.cssText='font-size:18px;font-weight:800;margin-bottom:.4rem;letter-spacing:-.5px';h.textContent=ex.title;c.appendChild(h);
+  if(ex.scenario){const sc=document.createElement('p');sc.style.cssText='font-size:13px;color:var(--muted);margin-bottom:.85rem;font-style:italic';sc.textContent=ex.scenario;c.appendChild(sc);}
+  const inst=document.createElement('div');inst.className='dt-instructions';inst.textContent='Click on the wrong verb forms to fix them. There are '+ex.error_count+' errors.';c.appendChild(inst);
+  const dl=document.createElement('div');dl.className='pr-dialogue';
+  let fixed=0;const total=ex.error_count;
+  (ex.lines||[]).forEach(line=>{
+    const row=document.createElement('div');row.className='dl-line';
+    const sp=document.createElement('span');sp.className='dl-speaker';sp.textContent=line.speaker;row.appendChild(sp);
+    const tx=document.createElement('span');tx.className='dl-text';
+    line.text.split(/(<ERROR[^>]*>.*?<\/ERROR>)/g).forEach(part=>{
+      const em=part.match(/<ERROR correct="([^"]+)">([^<]+)<\/ERROR>/);
+      if(em){
+        const[,correct,wrong]=em;
+        const span=document.createElement('span');span.className='dl-error';span.textContent=wrong;
+        span.dataset.correct=correct;
+        span.onclick=()=>{
+          if(span.classList.contains('fixed'))return;
+          const inp=document.createElement('input');
+          inp.type='text';inp.placeholder='correct form…';
+          inp.style.cssText='font-family:var(--mono);font-size:14px;font-weight:600;border:none;border-bottom:2px solid var(--accent);outline:none;background:transparent;width:110px;color:var(--text);padding:1px 4px';
+          span.textContent='';span.appendChild(inp);inp.focus();
+          const commit=()=>{
+            const val=inp.value.trim().toLowerCase();
+            const ok=val===correct.toLowerCase();
+            span.textContent=ok?correct:inp.value.trim()||wrong;
+            span.className='dl-error '+(ok?'fixed':'wrong-try');
+            if(ok){fixed++;addScore(1);const v=VERBS.find(x=>x.v2===correct||x.v3===correct||x.v1===correct);if(v)recordResult(v,true);if(fixed===total)prShowResult(fixed,total,'dialogue');}
+            else{setTimeout(()=>{span.textContent=wrong;span.className='dl-error';},1200);}
+          };
+          inp.addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();commit();}if(e.key==='Escape'){span.textContent=wrong;span.className='dl-error';}});
+          inp.addEventListener('blur',commit);
+        };
+        tx.appendChild(span);
+      } else if(part){tx.appendChild(document.createTextNode(part));}
+    });
+    row.appendChild(tx);dl.appendChild(row);
+  });
+  c.appendChild(dl);
+  if(ex.summary){const s=document.createElement('details');s.style.cssText='margin-top:.85rem;font-size:13px;color:var(--muted)';s.innerHTML='<summary style="cursor:pointer;font-weight:600;color:var(--hint)">Russian summary &#x25BE;</summary><div style="margin-top:.5rem">'+ex.summary+'</div>';c.appendChild(s);}
+}
+
+// ── BUILDER ───────────────────────────────────────────
+let sbState=[];
+function prRenderBuilder(ex){
+  const c=document.getElementById('pr-content');
+  const h=document.createElement('h3');h.style.cssText='font-size:18px;font-weight:800;margin-bottom:1rem;letter-spacing:-.5px';h.textContent=ex.title;c.appendChild(h);
+  sbState=(ex.sentences||[]).map(s=>({...s,placed:[],done:false}));
+  sbState.forEach((_,i)=>c.appendChild(buildSBCard(i)));
+}
+function buildSBCard(i){
+  const s=sbState[i];const card=document.createElement('div');card.className='pr-builder-area';card.style.marginBottom='.85rem';
+  const meta=document.createElement('div');meta.style.cssText='font-size:11px;font-weight:700;color:var(--hint);margin-bottom:.35rem;text-transform:uppercase;letter-spacing:.5px';meta.textContent=(i+1)+'. '+s.verb+' \xb7 '+s.tense;card.appendChild(meta);
+  const ru=document.createElement('div');ru.className='sb-ru';ru.textContent=s.ru;card.appendChild(ru);
+  const target=document.createElement('div');target.className='sb-target';target.id='sb-target-'+i;
+  target.ondragover=e=>{e.preventDefault();target.classList.add('drag-over');};
+  target.ondragleave=()=>target.classList.remove('drag-over');
+  target.ondrop=e=>{e.preventDefault();target.classList.remove('drag-over');sbPlaceWord(e.dataTransfer.getData('text'),i);};
+  card.appendChild(target);
+  const pool=document.createElement('div');pool.className='sb-pool';pool.id='sb-pool-'+i;
+  shuffle([...s.words]).forEach(w=>{
+    const chip=document.createElement('div');chip.className='sb-word';chip.textContent=w;chip.draggable=true;chip.dataset.word=w;chip.dataset.sent=i;
+    chip.addEventListener('dragstart',e=>e.dataTransfer.setData('text',w));
+    chip.onclick=()=>sbPlaceWord(w,i);pool.appendChild(chip);
+  });
+  card.appendChild(pool);
+  const fb=document.createElement('div');fb.id='sb-fb-'+i;fb.style.cssText='margin-top:.6rem;min-height:22px;font-size:13px;font-weight:600';card.appendChild(fb);
+  const btn=document.createElement('button');btn.className='btn-check';btn.style.cssText='margin-top:.6rem;font-size:12px;padding:7px 20px';btn.textContent='Check \u2192';btn.onclick=()=>sbCheck(i,btn);card.appendChild(btn);
+  return card;
+}
+function sbPlaceWord(word,i){
+  if(sbState[i].done)return;
+  sbState[i].placed.push(word);
+  const pool=document.getElementById('sb-pool-'+i);let found=false;
+  pool.querySelectorAll('.sb-word:not(.placed)').forEach(c=>{if(!found&&c.dataset.word===word){c.classList.add('placed');found=true;}});
+  sbRefreshTarget(i);
+}
+function sbRefreshTarget(i){
+  const target=document.getElementById('sb-target-'+i);target.innerHTML='';
+  sbState[i].placed.forEach((w,wi)=>{
+    const chip=document.createElement('span');chip.className='sb-word in-target';chip.textContent=w;
+    chip.onclick=()=>{
+      sbState[i].placed.splice(wi,1);
+      const pool=document.getElementById('sb-pool-'+i);let found=false;
+      pool.querySelectorAll('.sb-word.placed').forEach(c=>{if(!found&&c.dataset.word===w){c.classList.remove('placed');found=true;}});
+      sbRefreshTarget(i);
+    };
+    target.appendChild(chip);
+  });
+}
+function sbCheck(i,btn){
+  const s=sbState[i];const attempt=s.placed.join(' ').toLowerCase().trim();const correct=s.correct.toLowerCase().trim();
+  const ok=attempt===correct;
+  document.getElementById('sb-fb-'+i).innerHTML=ok?'<span style="color:var(--accent-d)">\u2713 Perfect!</span>':'<span style="color:var(--err)">Not quite. </span><span style="font-family:var(--mono);font-size:12px;color:var(--accent-d)">'+s.correct+'</span>';
+  btn.disabled=true;sbState[i].done=true;
+  const v=VERBS.find(x=>x.v1===s.verb);if(v)recordResult(v,ok);if(ok)addScore(2);
+  const allDone=sbState.every(s=>s.done);
+  if(allDone){const okCount=sbState.filter(s=>{const a=s.placed.join(' ').toLowerCase().trim();return a===s.correct.toLowerCase().trim();}).length;prShowResult(okCount,sbState.length,'builder');}
+}
+
+// ── TRANSLATE ─────────────────────────────────────────
+function prRenderTranslate(ex){
+  const c=document.getElementById('pr-content');
+  const h=document.createElement('h3');h.style.cssText='font-size:18px;font-weight:800;margin-bottom:1rem;letter-spacing:-.5px';h.textContent=ex.title;c.appendChild(h);
+  let checked=0;const total=ex.items.length;
+  (ex.items||[]).forEach((item,i)=>{
+    const card=document.createElement('div');card.className='pr-translate-card';
+    const num=document.createElement('div');num.style.cssText='font-size:11px;font-weight:700;color:var(--hint);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.5px';num.textContent=(i+1)+'. '+item.verb+' \xb7 '+item.tense;card.appendChild(num);
+    const ru=document.createElement('div');ru.className='tr-ru-sentence';ru.textContent=item.ru;card.appendChild(ru);
+    const hint=document.createElement('div');hint.className='tr-hint';hint.textContent='Hint: '+item.hint;card.appendChild(hint);
+    const inp=document.createElement('textarea');inp.className='tr-input';inp.rows=2;inp.placeholder='Type the English sentence here\u2026';inp.id='tr-inp-'+i;card.appendChild(inp);
+    const ans=document.createElement('div');ans.className='tr-answer';ans.id='tr-ans-'+i;ans.innerHTML='<b>Model answer:</b> '+item.en_answer;card.appendChild(ans);
+    const btn=document.createElement('button');btn.className='btn-check';btn.style.cssText='margin-top:.6rem;font-size:12px;padding:7px 18px';btn.textContent='Check';
+    btn.onclick=()=>{
+      const val=inp.value.trim().toLowerCase();const ok=val.includes(item.key_form.toLowerCase())&&val.length>8;
+      inp.className='tr-input '+(ok?'ok':'bad');ans.style.display='block';btn.disabled=true;
+      const v=VERBS.find(x=>x.v1===item.verb);if(v)recordResult(v,ok);if(ok)addScore(2);
+      checked++;if(checked===total){const okCount=ex.items.filter((_,j)=>document.getElementById('tr-inp-'+j).classList.contains('ok')).length;prShowResult(okCount,total,'translate');}
+    };
+    card.appendChild(btn);c.appendChild(card);
+  });
+}
+
+// ── CHOOSER ───────────────────────────────────────────
+function prRenderChooser(ex){
+  const c=document.getElementById('pr-content');
+  const h=document.createElement('h3');h.style.cssText='font-size:18px;font-weight:800;margin-bottom:1rem;letter-spacing:-.5px';h.textContent=ex.title;c.appendChild(h);
+  let answered=0;const total=ex.items.length;
+  (ex.items||[]).forEach(item=>{
+    const block=document.createElement('div');block.style.marginBottom='1.5rem';
+    const vb=document.createElement('div');vb.className='ch-verb-big';vb.textContent='to '+item.verb;block.appendChild(vb);
+    const vr=document.createElement('div');vr.className='ch-verb-ru';vr.textContent=item.ru;block.appendChild(vr);
+    const opts=document.createElement('div');opts.className='pr-chooser';
+    const shuffledOpts=shuffle([...item.options]);
+    shuffledOpts.forEach((opt,oi)=>{
+      const btn=document.createElement('div');btn.className='ch-option';btn.textContent=opt.text;
+      btn.onclick=()=>{
+        if(opts.dataset.answered)return;opts.dataset.answered='1';
+        const ok=opt.correct;btn.className='ch-option '+(ok?'sel-ok':'sel-bad');
+        opts.querySelectorAll('.ch-option').forEach((b,bi)=>{if(shuffledOpts[bi].correct)b.classList.add('reveal-ok');});
+        shuffledOpts.forEach((o,oi2)=>{if(!o.correct&&o.error){const lbl=document.createElement('div');lbl.style.cssText='font-size:11px;color:var(--err);margin-top:.3rem;padding-left:.5rem';lbl.textContent='\u2717 '+o.error;opts.children[oi2].appendChild(lbl);}});
+        const v=VERBS.find(x=>x.v1===item.verb);if(v)recordResult(v,ok);if(ok)addScore(2);
+        answered++;if(answered===total)prShowResult(ex.items.filter(it=>it.options.find(o=>o.correct)).length,total,'chooser');
+      };
+      opts.appendChild(btn);
+    });
+    block.appendChild(opts);c.appendChild(block);
+  });
+}
+
+// ── DETECTIVE ─────────────────────────────────────────
+let dtErrorSpans=[];
+function prRenderDetective(ex){
+  const c=document.getElementById('pr-content');
+  const h=document.createElement('h3');h.style.cssText='font-size:18px;font-weight:800;margin-bottom:.4rem;letter-spacing:-.5px';h.textContent=ex.title;c.appendChild(h);
+  if(ex.type_label){const tl=document.createElement('div');tl.style.cssText='font-size:11px;font-weight:700;color:var(--hint);margin-bottom:.75rem;text-transform:uppercase;letter-spacing:.5px';tl.textContent=ex.type_label;c.appendChild(tl);}
+  const inst=document.createElement('div');inst.className='dt-instructions';inst.innerHTML='Click on verb forms that look <b>wrong</b>. Click again to deselect. There are <b>'+ex.error_count+'</b> errors to find.';c.appendChild(inst);
+  dtErrorSpans=[];
+  const art=document.createElement('div');art.className='pr-detective';
+  (ex.paragraphs||[]).forEach(para=>{
+    const p=document.createElement('p');
+    para.split(/(<ERROR[^>]*>.*?<\/ERROR>|<dt-ok>[^<]*<\/dt-ok>)/g).forEach(part=>{
+      const em=part.match(/<ERROR correct="([^"]+)">([^<]+)<\/ERROR>/);
+      const ok=part.match(/<dt-ok>([^<]+)<\/dt-ok>/);
+      if(em){
+        const[,correct,wrong]=em;
+        const span=document.createElement('span');span.className='dt-span';span.textContent=wrong;span.dataset.correct=correct;span.dataset.isError='1';span.dataset.clicked='0';
+        span.onclick=()=>{span.dataset.clicked=span.dataset.clicked==='1'?'0':'1';span.className='dt-span'+(span.dataset.clicked==='1'?' flagged':'');};
+        dtErrorSpans.push(span);p.appendChild(span);
+      } else if(ok){
+        // correct verb form — make it clickable as a distractor
+        const span=document.createElement('span');span.className='dt-span';span.textContent=ok[1];span.dataset.isError='0';span.dataset.clicked='0';
+        span.onclick=()=>{span.dataset.clicked=span.dataset.clicked==='1'?'0':'1';span.className='dt-span'+(span.dataset.clicked==='1'?' flagged':'');};
+        p.appendChild(span);
+      } else if(part){
+        // scan plain text for verb-like words to make clickable distractors
+        const tokens=part.split(/(\w+)/);
+        tokens.forEach(tok=>{
+          const isVerb=/^(was|were|had|has|have|did|does|do|went|came|saw|said|got|made|took|gave|knew|found|kept|left|put|set|ran|fell|felt|held|met|paid|sat|slept|stood|told|thought|brought|bought|caught|cut|heard|hit|hurt|let|lost|meant|read|sold|sent|spent|wore|won|wrote|broke|built|chose|drove|ate|flew|grew|hung|hid|lay|led|lent|lit|rode|rang|rose|shot|showed|sang|sank|spoke|stole|stuck|struck|swore|swept|swam|swung|taught|tore|threw|understood|woke|beat|began|bent|bet|bit|blew|became|drew|drank|fed|fought|forgot|forgave|froze|dealt|dug|blown|beaten|begun|bent|bitten|broken|built|caught|chosen|come|done|drawn|drunk|driven|eaten|fallen|fed|felt|fought|found|flown|forgotten|forgiven|frozen|got|given|gone|grown|hung|had|heard|hidden|held|hurt|kept|known|laid|led|left|lent|let|lain|lit|lost|made|meant|met|paid|put|read|ridden|rung|risen|run|said|seen|sought|sold|sent|set|shaken|shone|shot|shown|shut|sung|sunk|sat|slept|spoken|spent|stood|stolen|stuck|struck|sworn|swept|swum|swung|taken|taught|torn|told|thought|thrown|understood|woken|worn|won|written)$/.test(tok.toLowerCase());
+          if(isVerb&&tok.length>1){
+            const span=document.createElement('span');span.className='dt-span';span.textContent=tok;span.dataset.isError='0';span.dataset.clicked='0';
+            span.onclick=()=>{span.dataset.clicked=span.dataset.clicked==='1'?'0':'1';span.className='dt-span'+(span.dataset.clicked==='1'?' flagged':'');};
+            p.appendChild(span);
+          } else {
+            p.appendChild(document.createTextNode(tok));
+          }
+        });
+      }
+    });
+    art.appendChild(p);
+  });
+  c.appendChild(art);
+  if(ex.summary){const s=document.createElement('details');s.style.cssText='margin-top:.85rem;font-size:13px;color:var(--muted)';s.innerHTML='<summary style="cursor:pointer;font-weight:600;color:var(--hint)">Russian summary &#x25BE;</summary><div style="margin-top:.5rem;line-height:1.8">'+ex.summary+'</div>';c.appendChild(s);}
+}
+
+// ── CHECK ALL ─────────────────────────────────────────
+function prCheckAll(){
+  const t=prCurrentExercise?.type;
+  if(t==='gap') prCheckGapAll();
+  else if(t==='detective') prCheckDetectiveAll();
+  else if(t==='builder') sbState.forEach((_,i)=>{if(!sbState[i].done){const btn=document.getElementById('sb-fb-'+i)?.parentElement?.querySelector('button');if(btn&&!btn.disabled)btn.click();}});
+  else if(t==='translate'){let ok=0,tot=0;document.querySelectorAll('.tr-input').forEach((inp,i)=>{const btn=inp.nextElementSibling?.nextElementSibling;if(btn&&!btn.disabled){btn.click();tot++;if(inp.classList.contains('ok'))ok++;}else{tot++;if(inp.classList.contains('ok'))ok++;}});prShowResult(ok,tot,'translate');}
+}
+function prCheckGapAll(){
+  const all=document.querySelectorAll('.gap-choice-row');let ok=0;
+  all.forEach(row=>{if(row.querySelector('.chosen-ok'))ok++;else if(!row.querySelector('.chosen-bad')){row.querySelectorAll('.gap-pill').forEach(p=>{if(p.dataset.correct==='1')p.className='gap-pill reveal';});}});
+  prShowResult(ok,all.length,'gap');
+}
+function prCheckDetectiveAll(){
+  let correct=0,falseAlarms=0;const total=dtErrorSpans.length;
+  dtErrorSpans.forEach(span=>{
+    if(span.dataset.clicked==='1'){correct++;span.className='dt-span correct-flag';span.title='\u2713 \u2192 '+span.dataset.correct;const v=VERBS.find(x=>x.v2===span.dataset.correct||x.v3===span.dataset.correct||x.v1===span.dataset.correct);if(v)recordResult(v,true);addScore(1);}
+    else{span.className='dt-span missed-flag';span.title='Missed! Should be: '+span.dataset.correct;}
+  });
+  document.querySelectorAll('.dt-span.flagged').forEach(span=>{if(span.dataset.isError!=='1'){falseAlarms++;span.className='dt-span';}});
+  prShowResult(Math.max(0,correct-falseAlarms),total,'detective');
+}
+function prShowResult(score,total,type){
+  const pct=total>0?Math.round(score/total*100):0;
+  const box=document.getElementById('pr-result');box.classList.remove('hidden');
+  const cls=pct>=80?'all-ok':pct>=50?'partial':'poor';
+  const emoji=pct>=80?'\uD83C\uDF89':pct>=50?'\uD83D\uDC4D':'\uD83D\uDCAA';
+  const msg=pct>=80?'Excellent!':pct>=50?'Good effort \u2014 review the missed ones.':'Keep going \u2014 these verbs will come back.';
+  box.className='pr-result-box '+cls;
+  box.innerHTML='<div class="pr-result-score">'+emoji+' '+score+'/'+total+'</div><div class="pr-result-msg">'+pct+'% \xb7 '+msg+'</div>';
+  document.getElementById('pr-action-btns').classList.remove('hidden');
+  box.scrollIntoView({behavior:'smooth',block:'nearest'});
+}
+
+loadScores();
+
+</script>
+</body>
+</html>
