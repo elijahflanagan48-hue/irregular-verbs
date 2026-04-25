@@ -30,6 +30,9 @@ nav{background:var(--card);border-bottom:1px solid var(--border);padding:0 1.5re
 .nav-score b{color:var(--accent)}
 .nav-home-btn{background:none;border:none;cursor:pointer;font-size:18px;padding:0;line-height:1;color:var(--muted)}
 .nav-home-btn:hover{color:var(--text)}
+.easy-toggle{padding:5px 13px;border-radius:18px;border:1.5px solid var(--accent);font-family:var(--sans);font-size:11px;font-weight:700;cursor:pointer;background:var(--accent-l);color:var(--accent-d);transition:all .2s;white-space:nowrap;margin-left:.25rem}
+.easy-toggle.normal-mode{background:#f0efeb;color:var(--muted);border-color:var(--border)}
+.easy-hint{display:inline-block;font-size:11px;color:var(--accent-d);background:var(--accent-l);border-radius:6px;padding:2px 8px;margin-bottom:.5rem;font-weight:600}
 main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
 .screen{display:none}.screen.active{display:block}
 
@@ -260,6 +263,7 @@ main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
 .dt-span.flagged{background:var(--warn-l);border-bottom:2px solid var(--warn);color:var(--warn);font-weight:600;border-radius:3px}
 .dt-span.correct-flag{background:var(--accent-l);border-bottom:2px solid var(--accent);color:var(--accent-d);font-weight:600;border-radius:3px}
 .dt-span.missed-flag{background:var(--err-l);border-bottom:2px solid var(--err);color:var(--err);font-weight:600;border-radius:3px}
+.dt-span.dt-pre-highlight{background:var(--warn-l);border-bottom:2px dashed var(--warn);color:var(--warn);border-radius:3px}
 .dt-instructions{font-size:12px;color:var(--muted);margin-bottom:.85rem;padding:.6rem 1rem;background:var(--warn-l);border-radius:var(--rad-sm);border:1px solid #f0c070}
 
 /* result box */
@@ -303,6 +307,7 @@ main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
   </div>
   <div class="nav-right">
     <div class="nav-score hidden" id="navScore">Score <b id="scoreVal">0</b></div>
+    <button class="easy-toggle" id="easyToggleBtn" onclick="toggleEasy()">🟢 Easy</button>
     <button class="nav-home-btn hidden" id="navHomeBtn" onclick="goHome()">⌂</button>
   </div>
 </nav>
@@ -357,7 +362,7 @@ main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
       <div class="mode-card" onclick="startMode('practice')" style="border-color:var(--accent);grid-column:1/-1;background:linear-gradient(135deg,var(--accent-l),#fff);display:flex;align-items:center;gap:1.25rem;padding:1.25rem 1.5rem">
         <span style="font-size:36px;flex-shrink:0">🎯</span>
         <div>
-          <h3 style="font-size:15px;margin-bottom:.3rem">Real-World Practice <span style="font-size:10px;background:var(--accent);color:#fff;padding:2px 8px;border-radius:8px;font-weight:700;vertical-align:middle;margin-left:6px">AI-powered</span></h3>
+          <h3 style="font-size:15px;margin-bottom:.3rem">Real-World Practice</h3>
           <p style="font-size:12px;color:var(--muted)">AI generates fresh stories, dialogues & news every session. Gap-fill, repair errors, build sentences, translate — all in rich real context.</p>
         </div>
       </div>
@@ -373,6 +378,7 @@ main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
     <div class="stat"><b id="fc-unknown">0</b>Review</div>
     <div class="stat"><b id="fc-streak">0</b>Streak</div>
   </div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="fc-bar"></div></div>
   <div class="mastery-row" id="fc-dots"></div>
   <div id="fc-adapt-badge" class="adapt-badge new">⭐ New verb</div>
   <div class="flashcard-wrap">
@@ -382,6 +388,7 @@ main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
         <div class="fc-word" id="fc-v1">—</div>
         <div class="fc-ru" id="fc-ru">—</div>
         <div class="fc-tap">tap to reveal ↓</div>
+        <div id="fc-easy-hint" class="easy-hint" style="display:none;margin-top:.5rem"></div>
       </div>
       <div class="fc-face fc-back">
         <div class="fc-label">Three forms</div>
@@ -412,23 +419,56 @@ main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
     <div class="stat"><b id="tf-correct">0</b>Correct</div>
     <div class="stat"><b id="tf-pct">—</b>Accuracy</div>
   </div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="tf-bar"></div></div>
   <div class="mastery-row" id="tf-dots"></div>
   <div id="tf-adapt-badge" class="adapt-badge new">⭐ New verb</div>
-  <div class="tf-card">
-    <div class="tf-verb" id="tf-verb">—</div>
-    <div class="tf-trans" id="tf-trans">—</div>
-    <div class="tf-inputs">
-      <div class="tf-iw"><div class="iw-lbl">V1 — Base</div><input class="tf-input" id="tf-v1" placeholder="base form" onkeydown="tfKey(event)"/></div>
-      <div class="tf-iw"><div class="iw-lbl">V2 — Past Simple</div><input class="tf-input" id="tf-v2" placeholder="past simple" onkeydown="tfKey(event)"/></div>
-      <div class="tf-iw"><div class="iw-lbl">V3 — Past Participle</div><input class="tf-input" id="tf-v3" placeholder="past participle" onkeydown="tfKey(event)"/></div>
+  <!-- level picker -->
+  <div id="tf-level-pick" class="tf-card hidden" style="text-align:center;padding:2rem 1.5rem">
+    <div style="font-size:28px;margin-bottom:.65rem">📝</div>
+    <h2 style="font-size:20px;font-weight:800;margin-bottom:.4rem">Three Forms</h2>
+    <p style="color:var(--muted);font-size:13px;margin-bottom:1.5rem">Choose your level</p>
+    <div style="display:flex;gap:.75rem;justify-content:center;flex-wrap:wrap">
+      <button class="btn-skip" style="font-size:14px;padding:12px 22px;border-radius:12px" onclick="tfStartLevel('easy')">
+        🟢 A1–A2 <small style="display:block;font-weight:400;opacity:.75;font-size:11px">Choose the Past Simple</small>
+      </button>
+      <button class="btn-check" style="font-size:14px;padding:12px 22px" onclick="tfStartLevel('hard')">
+        🔵 B1+ <small style="display:block;font-weight:400;opacity:.75;font-size:11px">Type all 3 forms</small>
+      </button>
     </div>
-    <div id="tf-feedback" class="hidden"></div>
-    <div class="tf-example hidden" id="tf-ex-wrap">Example: <span id="tf-ex"></span></div>
-    <br>
-    <button class="btn-check" id="tf-check-btn" onclick="tfCheck()">Check →</button>
-    <button class="btn-next hidden" id="tf-next-btn" onclick="tfNext()">Next →</button>
+  </div>
+  <!-- B1+ type mode -->
+  <div id="tf-type-mode" class="hidden">
+    <div class="tf-card">
+      <div class="tf-verb" id="tf-verb">—</div>
+      <div class="tf-trans" id="tf-trans">—</div>
+      <div class="tf-inputs">
+        <div class="tf-iw"><div class="iw-lbl">V1 — Base</div><input class="tf-input" id="tf-v1" placeholder="base form" onkeydown="tfKey(event)"/></div>
+        <div class="tf-iw"><div class="iw-lbl">V2 — Past Simple</div><input class="tf-input" id="tf-v2" placeholder="past simple" onkeydown="tfKey(event)"/></div>
+        <div class="tf-iw"><div class="iw-lbl">V3 — Past Participle</div><input class="tf-input" id="tf-v3" placeholder="past participle" onkeydown="tfKey(event)"/></div>
+      </div>
+      <div id="tf-feedback" class="hidden"></div>
+      <div class="tf-example hidden" id="tf-ex-wrap">Example: <span id="tf-ex"></span></div>
+      <br>
+      <button class="btn-check" id="tf-check-btn" onclick="tfCheck()">Check →</button>
+      <button class="btn-next hidden" id="tf-next-btn" onclick="tfNext()">Next →</button>
+    </div>
+  </div>
+  <!-- A1–A2 choice mode -->
+  <div id="tf-choice-mode" class="hidden">
+    <div class="tf-card">
+      <div style="font-size:11px;font-weight:700;color:var(--hint);letter-spacing:.5px;text-transform:uppercase;margin-bottom:.5rem">What is the Past Simple form?</div>
+      <div class="tf-verb" id="tf-cv-verb">—</div>
+      <div class="tf-trans" id="tf-cv-trans">—</div>
+      <div class="fib-choices" id="tf-cv-choices" style="margin-top:1.25rem"></div>
+      <div id="tf-cv-feedback" class="hidden" style="margin-top:.85rem"></div>
+      <div class="tf-example hidden" id="tf-cv-ex-wrap" style="margin-top:.75rem">Example: <span id="tf-cv-ex"></span></div>
+      <br>
+      <button class="btn-next hidden" id="tf-cv-next-btn" onclick="tfCvNext()">Next →</button>
+    </div>
   </div>
 </div>
+
+
 
 <!-- FILL IN BLANK -->
 <div class="screen" id="screen-fillin">
@@ -437,6 +477,7 @@ main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
     <div class="stat"><b id="fib-correct">0</b>Correct</div>
     <div class="stat"><b id="fib-pct">—</b>Accuracy</div>
   </div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="fib-bar"></div></div>
   <div class="mastery-row" id="fib-dots"></div>
   <div id="fib-adapt-badge" class="adapt-badge new">⭐ New verb</div>
   <div class="tf-card">
@@ -459,30 +500,41 @@ main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
     <div id="sp-ready">
       <div style="font-size:40px;margin-bottom:.65rem">⚡</div>
       <h2 style="font-size:20px;font-weight:800;margin-bottom:.35rem">Speed Challenge</h2>
-      <p style="color:var(--muted);font-size:13px;margin-bottom:1rem">10 sec per verb · fast answer = bonus!<br>Harder verbs appear more often.</p>
-      <button class="btn-check" onclick="spStart()">Start!</button>
+      <p style="color:var(--muted);font-size:13px;margin-bottom:1rem">Fast answers = bonus points!<br>Harder verbs appear more often.</p>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:.75rem" id="sp-level-ind"></div>
+      <button class="btn-check" style="font-size:15px;padding:12px 32px" onclick="spStartLevel(easyMode?'easy':'hard')">Start →</button>
     </div>
     <div id="sp-game" class="hidden">
       <div class="speed-timer" id="sp-timer">10</div>
       <div class="speed-verb-big" id="sp-verb">—</div>
       <div class="speed-trans" id="sp-trans">—</div>
-      <div class="speed-fields">
-        <div><div class="lbl" style="margin-bottom:3px">V1</div><input class="speed-input" id="sp-v1" placeholder="base" onkeydown="spKey(event)"/></div>
-        <div><div class="lbl" style="margin-bottom:3px">V2</div><input class="speed-input" id="sp-v2" placeholder="past" onkeydown="spKey(event)"/></div>
-        <div><div class="lbl" style="margin-bottom:3px">V3</div><input class="speed-input" id="sp-v3" placeholder="pp" onkeydown="spKey(event)"/></div>
+      <!-- B1+ type fields -->
+      <div id="sp-type-fields">
+        <div class="speed-fields">
+          <div><div class="lbl" style="margin-bottom:3px">V1</div><input class="speed-input" id="sp-v1" placeholder="base" onkeydown="spKey(event)"/></div>
+          <div><div class="lbl" style="margin-bottom:3px">V2</div><input class="speed-input" id="sp-v2" placeholder="past" onkeydown="spKey(event)"/></div>
+          <div><div class="lbl" style="margin-bottom:3px">V3</div><input class="speed-input" id="sp-v3" placeholder="pp" onkeydown="spKey(event)"/></div>
+        </div>
+        <button class="btn-check" style="margin-top:.75rem" onclick="spCheck()">Submit ↵</button>
+      </div>
+      <!-- A1-A2 choice -->
+      <div id="sp-choice-fields" class="hidden">
+        <div style="font-size:12px;color:var(--muted);margin-bottom:.6rem">Past Simple (V2):</div>
+        <div class="fib-choices" id="sp-choices"></div>
       </div>
       <div id="sp-fb" style="min-height:24px;margin-top:.6rem;font-size:13px;font-weight:600"></div>
-      <button class="btn-check" style="margin-top:.75rem" onclick="spCheck()">Submit ↵</button>
     </div>
     <div id="sp-over" class="hidden">
       <div style="font-size:14px;color:var(--muted);margin-bottom:.35rem">Final Score</div>
       <div class="speed-score-big" id="sp-final">0</div>
       <div style="font-size:13px;color:var(--muted);margin-top:.25rem" id="sp-rec"></div><br>
-      <button class="btn-check" onclick="spStart()">Play again</button>
+      <button class="btn-check" onclick="init_speed()">Play again</button>
       <button class="btn-next" onclick="goHome()" style="margin-left:.5rem">Home</button>
     </div>
   </div>
 </div>
+
+
 
 <!-- SORTING -->
 <div class="screen" id="screen-sorting">
@@ -510,6 +562,7 @@ main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
   <div class="center mt2">
     <button class="btn-check" onclick="sortCheck()">Check answers</button>
     <button class="btn-next" onclick="startMode('sorting')" style="margin-left:.65rem">New set</button>
+    <button class="btn-skip" onclick="sortToggleHints(this)" style="margin-left:.65rem">💬 Show all forms</button>
   </div>
   <div id="sort-result" class="hidden mt2 center" style="font-size:14px;font-weight:600"></div>
 </div>
@@ -521,6 +574,7 @@ main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
     <div class="stat"><b id="li-correct">0</b>Correct</div>
     <div class="stat"><b id="li-pct">—</b>Accuracy</div>
   </div>
+  <div class="progress-bar-wrap"><div class="progress-bar" id="li-bar"></div></div>
   <div class="mastery-row" id="li-dots"></div>
   <div id="li-adapt-badge" class="adapt-badge new">⭐ New verb</div>
   <div class="tf-card center">
@@ -529,10 +583,11 @@ main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
     <button class="listen-btn" id="li-play-btn" onclick="liPlay()">
       <svg viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
     </button>
+    <div id="li-easy-hint" class="easy-hint" style="display:none"></div>
     <div class="listen-forms">
-      <div><div class="lbl" style="margin-bottom:3px">V1</div><input class="listen-input" id="li-v1" placeholder="base form" onkeydown="liKey(event)"/></div>
-      <div><div class="lbl" style="margin-bottom:3px">V2</div><input class="listen-input" id="li-v2" placeholder="past simple" onkeydown="liKey(event)"/></div>
-      <div><div class="lbl" style="margin-bottom:3px">V3</div><input class="listen-input" id="li-v3" placeholder="past participle" onkeydown="liKey(event)"/></div>
+      <div><div class="lbl" style="margin-bottom:3px">V1 — Base form</div><input class="listen-input" id="li-v1" placeholder="base form" onkeydown="liKey(event)"/></div>
+      <div id="li-v2-row"><div class="lbl" style="margin-bottom:3px">V2 — Past Simple</div><input class="listen-input" id="li-v2" placeholder="past simple" onkeydown="liKey(event)"/></div>
+      <div id="li-v3-row"><div class="lbl" style="margin-bottom:3px">V3 — Past Participle</div><input class="listen-input" id="li-v3" placeholder="past participle" onkeydown="liKey(event)"/></div>
     </div>
     <div id="li-feedback" class="hidden mt1"></div>
     <div class="tf-example hidden mt1" id="li-ex-wrap">Example: <span id="li-ex"></span></div><br>
@@ -568,6 +623,7 @@ main{max-width:800px;margin:0 auto;padding:1.5rem 1.25rem 3rem}
       <p style="font-size:13px;color:var(--muted)">Rich stories, dialogues and news — fresh content every session. Your weak verbs appear most often.</p>
     </div>
     <div style="font-size:11px;font-weight:700;letter-spacing:.5px;text-transform:uppercase;color:var(--hint);margin-bottom:.65rem">Choose exercise type</div>
+    <p style="font-size:12px;color:var(--muted);margin-bottom:.75rem">Gap-fill and Dialogue are great for A1–A2. Translation and Tense Detective are best for B1+.</p>
     <div class="pr-type-grid" id="prTypeGrid">
       <button class="pr-type-btn sel" data-type="gap" onclick="prSelectType(this)">
         <span>&#x1F4D6;</span><b>Story Gap-fill</b>
@@ -724,6 +780,19 @@ const VERBS=[
 const SESSION=20;
 let scores={},sessionScore=0,currentTheme='all',currentMode='';
 let bestSpeed=parseInt(localStorage.getItem('vf_best')||'0');
+let easyMode=localStorage.getItem('vf_easy')==='1';
+function toggleEasy(){
+  easyMode=!easyMode;
+  localStorage.setItem('vf_easy',easyMode?'1':'0');
+  applyEasyToggleUI();
+  if(currentMode&&window['init_'+currentMode])window['init_'+currentMode]();
+}
+function applyEasyToggleUI(){
+  const btn=document.getElementById('easyToggleBtn');
+  if(!btn)return;
+  btn.textContent=easyMode?'🟢 Easy':'⚙️ Normal';
+  btn.className=easyMode?'easy-toggle':'easy-toggle normal-mode';
+}
 
 function loadScores(){try{scores=JSON.parse(localStorage.getItem('vf_scores')||'{}');}catch(e){scores={};}}
 function saveScores(){localStorage.setItem('vf_scores',JSON.stringify(scores));}
@@ -757,7 +826,7 @@ function chk(ans,correct){return correct.split('/').map(x=>x.trim().toLowerCase(
 function goHome(){showScreen('home');document.getElementById('navModes').classList.add('hidden');document.getElementById('navScore').classList.add('hidden');document.getElementById('navHomeBtn').classList.add('hidden');currentMode='';}
 function showScreen(id){document.querySelectorAll('.screen').forEach(s=>s.classList.remove('active'));document.getElementById('screen-'+id).classList.add('active');}
 function showNav(mode){
-  document.getElementById('navModes').classList.remove('hidden');document.getElementById('navScore').classList.remove('hidden');document.getElementById('navHomeBtn').classList.remove('hidden');
+  document.getElementById('navModes').classList.remove('hidden');document.getElementById('navScore').classList.remove('hidden');document.getElementById('navHomeBtn').classList.remove('hidden');applyEasyToggleUI();
   document.getElementById('scoreVal').textContent=sessionScore;
   document.querySelectorAll('.mode-btn').forEach(b=>b.classList.remove('active'));
   const btn=document.querySelector(`.mode-btn[onclick="startMode('${mode}')"]`);if(btn)btn.classList.add('active');
@@ -783,6 +852,8 @@ function fcRender(){
   document.getElementById('fc-b1').textContent=v.v1;document.getElementById('fc-b2').textContent=v.v2;document.getElementById('fc-b3').textContent=v.v3;
   const ex=v.ex[Math.floor(Math.random()*v.ex.length)];
   document.getElementById('fc-example').innerHTML=v.ru+' · '+ex.replace(/\{(\w+)\}/g,'<b>$1</b>');
+  const fcEH=document.getElementById('fc-easy-hint');
+  if(fcEH){fcEH.textContent=easyMode?'Pattern: '+v.p+' · '+v.v1+' / '+v.v2+' / '+v.v3:'';fcEH.style.display=easyMode?'block':'none';}
   document.getElementById('flashcard').classList.remove('flipped');document.getElementById('fc-btns').classList.add('hidden');fcFlipped=false;
   setBadge('fc-adapt-badge',v);
   document.getElementById('fc-progress').textContent=(fcIdx+1)+'/'+SESSION;
@@ -799,8 +870,55 @@ function fcPrev(){if(fcIdx>0){fcIdx--;fcResults.pop();fcRender();}}
 function fcDone(){const p=Math.round(fcKnown/SESSION*100);if(confirm('Session done! 🎉\nKnown: '+fcKnown+'/'+SESSION+' ('+p+'%)\nWeak verbs come back next session.\n\nNew session?')){init_flashcard();}else goHome();}
 
 // ── THREE FORMS ───────────────────────────────────────
-let tfDeck,tfIdx,tfCorrect,tfChecked,tfResults;
-function init_threeforms(){tfDeck=buildDeck();tfIdx=0;tfCorrect=0;tfChecked=false;tfResults=[];tfRender();}
+let tfDeck,tfIdx,tfCorrect,tfChecked,tfResults,tfLevel='hard';
+function init_threeforms(){
+  tfDeck=buildDeck();tfIdx=0;tfCorrect=0;tfChecked=false;tfResults=[];
+  tfLevel=easyMode?'easy':'hard';
+  document.getElementById('tf-level-pick').classList.add('hidden');
+  document.getElementById('tf-type-mode').classList.add('hidden');
+  document.getElementById('tf-choice-mode').classList.add('hidden');
+  if(easyMode){document.getElementById('tf-choice-mode').classList.remove('hidden');tfCvRender();}
+  else{document.getElementById('tf-type-mode').classList.remove('hidden');tfRender();}
+}
+function tfStartLevel(level){
+  tfLevel=level;
+  document.getElementById('tf-level-pick').classList.add('hidden');
+  if(level==='easy'){document.getElementById('tf-choice-mode').classList.remove('hidden');tfCvRender();}
+  else{document.getElementById('tf-type-mode').classList.remove('hidden');tfRender();}
+}
+// A1-A2: choose V2 from 4 options
+function tfCvRender(){
+  if(tfIdx>=tfDeck.length){tfDone();return;}
+  const v=tfDeck[tfIdx];
+  document.getElementById('tf-cv-verb').textContent=v.v1;
+  document.getElementById('tf-cv-trans').textContent=v.ru;
+  document.getElementById('tf-cv-feedback').className='hidden';
+  document.getElementById('tf-cv-ex-wrap').className='tf-example hidden';
+  document.getElementById('tf-cv-next-btn').classList.add('hidden');
+  const others=shuffle(VERBS.filter(x=>x!==v)).slice(0,3);
+  const choices=shuffle([v.v2,...others.map(o=>o.v2)]);
+  const el=document.getElementById('tf-cv-choices');el.innerHTML='';
+  choices.forEach(c=>{const btn=document.createElement('button');btn.className='fib-choice';btn.textContent=c;btn.onclick=()=>tfCvSelect(btn,c,v);el.appendChild(btn);});
+  setBadge('tf-adapt-badge',v);
+  document.getElementById('tf-progress').textContent=(tfIdx+1)+'/'+SESSION;
+  document.getElementById('tf-bar').style.width=(tfIdx/SESSION*100)+'%';
+  renderDots('tf-dots',tfDeck,tfIdx,tfResults);
+}
+function tfCvSelect(btn,chosen,v){
+  document.getElementById('tf-cv-choices').querySelectorAll('.fib-choice').forEach(b=>b.onclick=null);
+  const ok=chk(chosen,v.v2);btn.className='fib-choice '+(ok?'sel-ok':'sel-bad');
+  if(!ok)document.getElementById('tf-cv-choices').querySelectorAll('.fib-choice').forEach(b=>{if(chk(b.textContent,v.v2))b.className='fib-choice reveal-ok';});
+  const fb=document.getElementById('tf-cv-feedback');fb.className='feedback '+(ok?'ok':'bad');
+  fb.textContent=ok?'✓  '+v.v1+' → '+v.v2+' → '+v.v3:'Forms: '+v.v1+' → '+v.v2+' → '+v.v3;
+  document.getElementById('tf-cv-ex').innerHTML=v.ex[0].replace(/\{[\w\/]+\}/g,'<b>$&</b>').replace(/<b>\{([\w\/]+)\}<\/b>/g,'<b>$1</b>');
+  document.getElementById('tf-cv-ex-wrap').className='tf-example';
+  document.getElementById('tf-cv-next-btn').classList.remove('hidden');
+  recordResult(v,ok);tfResults.push(ok);tfIdx++;if(ok){tfCorrect++;addScore(1);}
+  document.getElementById('tf-correct').textContent=tfCorrect;
+  document.getElementById('tf-pct').textContent=Math.round(tfCorrect/tfIdx*100)+'%';
+}
+function tfCvNext(){tfCvRender();}
+// B1+: type all three
 function tfRender(){
   if(tfIdx>=tfDeck.length){tfDone();return;}
   const v=tfDeck[tfIdx];
@@ -820,7 +938,7 @@ function tfCheck(){
   const ok=c1&&c2&&c3;document.getElementById('tf-verb').textContent=v.v1;
   [['tf-v1',c1,v.v1],['tf-v2',c2,v.v2],['tf-v3',c3,v.v3]].forEach(([id,c,ans])=>{const e=document.getElementById(id);e.className='tf-input '+(c?'correct':'wrong');e.disabled=true;if(!c)e.value=ans;});
   const fb=document.getElementById('tf-feedback');fb.className='feedback '+(ok?'ok':'bad');fb.textContent=ok?'Perfect! ✓':'Correct: '+v.v1+' → '+v.v2+' → '+v.v3;
-  document.getElementById('tf-ex').innerHTML=v.ex[0].replace(/\{(\w+)\}/g,'<b>$1</b>');document.getElementById('tf-ex-wrap').className='tf-example';
+  document.getElementById('tf-ex').innerHTML=v.ex[0].replace(/\{[\w\/]+\}/g,'<b>$&</b>').replace(/<b>\{([\w\/]+)\}<\/b>/g,'<b>$1</b>');document.getElementById('tf-ex-wrap').className='tf-example';
   document.getElementById('tf-check-btn').classList.add('hidden');document.getElementById('tf-next-btn').classList.remove('hidden');
   recordResult(v,ok);tfResults.push(ok);if(ok){tfCorrect++;addScore(1);}tfChecked=true;
   document.getElementById('tf-correct').textContent=tfCorrect;
@@ -829,16 +947,29 @@ function tfCheck(){
 function tfNext(){tfIdx++;tfRender();}
 function tfDone(){const p=Math.round(tfCorrect/SESSION*100);if(confirm('Done! '+tfCorrect+'/'+SESSION+' ('+p+'%)\n\nNew session?')){init_threeforms();}else goHome();}
 
+
 // ── FILL IN BLANK ──────────────────────────────────────
-const TENSES=[{label:'Past Simple',key:'v2'},{label:'Present Perfect (V3)',key:'v3'},{label:'Base form',key:'v1'}];
+// exKey: detect which verb form {word} refers to in a sentence
+function exKey(rawEx, v) {
+  const m = rawEx.match(/\{([\w\/]+)\}/);
+  if (!m) return {key:'v2', label:'Past Simple'};
+  const w = m[1].toLowerCase();
+  if (v.v2.split('/').map(x=>x.trim().toLowerCase()).includes(w)) return {key:'v2', label:'Past Simple'};
+  if (v.v3.split('/').map(x=>x.trim().toLowerCase()).includes(w)) return {key:'v3', label:'Past Participle'};
+  if (w === v.v1.toLowerCase()) return {key:'v1', label:'Base form'};
+  return {key:'v2', label:'Past Simple'};
+}
 let fibDeck,fibIdx,fibCorrect,fibResults;
 function init_fillin(){fibDeck=buildDeck();fibIdx=0;fibCorrect=0;fibResults=[];fibRender();}
 function fibRender(){
   if(fibIdx>=fibDeck.length){fibDone();return;}
-  const v=fibDeck[fibIdx];const tense=TENSES[Math.floor(Math.random()*TENSES.length)];const correct=v[tense.key];
-  const sentence=v.ex[Math.floor(Math.random()*v.ex.length)].replace(/\{(\w+)\}/g,'___');
+  const v=fibDeck[fibIdx];
+  const rawEx=v.ex[Math.floor(Math.random()*v.ex.length)];
+  const tense=exKey(rawEx,v);
+  const correct=v[tense.key];
+  const sentence=rawEx.replace(/\{[\w\/]+\}/g,'___');
   document.getElementById('fib-sentence').innerHTML=sentence.replace('___','<span class="fib-blank">___</span>');
-  document.getElementById('fib-meta').textContent='"'+v.v1+'" — '+v.ru+'  ·  '+tense.label;
+  document.getElementById('fib-meta').textContent=easyMode?'"'+v.v1+'" — '+v.ru+' · '+tense.label:'"'+v.v1+'" — '+v.ru;
   const others=shuffle(VERBS.filter(x=>x!==v)).slice(0,3);
   const choices=shuffle([correct,...others.map(o=>o[tense.key])]);
   const el=document.getElementById('fib-choices');el.innerHTML='';
@@ -852,8 +983,8 @@ function fibRender(){
 function fibSelect(btn,chosen,correct,v){
   document.getElementById('fib-choices').querySelectorAll('.fib-choice').forEach(b=>b.onclick=null);
   document.getElementById('fib-sentence').querySelector('.fib-blank').textContent=chosen;
-  const ok=chosen===correct;btn.className='fib-choice '+(ok?'sel-ok':'sel-bad');
-  if(!ok)document.getElementById('fib-choices').querySelectorAll('.fib-choice').forEach(b=>{if(b.textContent===correct)b.className='fib-choice reveal-ok';});
+  const ok=chk(chosen,correct);btn.className='fib-choice '+(ok?'sel-ok':'sel-bad');
+  if(!ok)document.getElementById('fib-choices').querySelectorAll('.fib-choice').forEach(b=>{if(chk(b.textContent,correct))b.className='fib-choice reveal-ok';});
   const fb=document.getElementById('fib-feedback');fb.className='feedback '+(ok?'ok':'bad');fb.textContent=ok?'Correct! ✓':'Right answer: '+correct;
   document.getElementById('fib-next-btn').classList.remove('hidden');
   recordResult(v,ok);fibResults.push(ok);fibIdx++;if(ok){fibCorrect++;addScore(1);}
@@ -863,20 +994,53 @@ function fibSelect(btn,chosen,correct,v){
 function fibNext(){fibRender();}
 function fibDone(){const p=Math.round(fibCorrect/SESSION*100);if(confirm('Done! '+fibCorrect+'/'+SESSION+' ('+p+'%)\n\nNew session?')){init_fillin();}else goHome();}
 
+
 // ── SPEED ──────────────────────────────────────────────
-let spDeck,spIdx,spScore,spStreak,spInterval,spTime;
-function init_speed(){document.getElementById('sp-ready').classList.remove('hidden');document.getElementById('sp-game').classList.add('hidden');document.getElementById('sp-over').classList.add('hidden');document.getElementById('sp-best').textContent=bestSpeed;}
-function spStart(){spDeck=buildDeck();spIdx=0;spScore=0;spStreak=0;document.getElementById('sp-ready').classList.add('hidden');document.getElementById('sp-over').classList.add('hidden');document.getElementById('sp-game').classList.remove('hidden');spNext();}
+let spDeck,spIdx,spScore,spStreak,spInterval,spTime,spLevel='hard';
+function init_speed(){
+  document.getElementById('sp-ready').classList.remove('hidden');
+  document.getElementById('sp-game').classList.add('hidden');
+  document.getElementById('sp-over').classList.add('hidden');
+  document.getElementById('sp-best').textContent=bestSpeed;
+  const ind=document.getElementById('sp-level-ind');
+  if(ind)ind.textContent=easyMode?'🟢 Easy: choose V2 · 15 sec':'⚙️ Normal: type all 3 · 10 sec';
+}
+function spStartLevel(level){
+  spLevel=level;
+  document.getElementById('sp-type-fields').classList.toggle('hidden',level==='easy');
+  document.getElementById('sp-choice-fields').classList.toggle('hidden',level==='hard');
+  spDeck=buildDeck();spIdx=0;spScore=0;spStreak=0;
+  document.getElementById('sp-ready').classList.add('hidden');document.getElementById('sp-over').classList.add('hidden');document.getElementById('sp-game').classList.remove('hidden');spNext();
+}
 function spNext(){
   if(spIdx>=spDeck.length){spGameOver();return;}
   const v=spDeck[spIdx];document.getElementById('sp-verb').textContent=v.v1;document.getElementById('sp-trans').textContent=v.ru;
-  ['sp-v1','sp-v2','sp-v3'].forEach(id=>{const e=document.getElementById(id);e.value='';e.className='speed-input';e.disabled=false;});
-  document.getElementById('sp-fb').textContent='';spTime=10;document.getElementById('sp-timer').textContent=spTime;document.getElementById('sp-timer').classList.remove('urgent');
+  document.getElementById('sp-fb').textContent='';
+  const maxT=spLevel==='easy'?15:10;spTime=maxT;
+  document.getElementById('sp-timer').textContent=spTime;document.getElementById('sp-timer').classList.remove('urgent');
   clearInterval(spInterval);spInterval=setInterval(()=>{spTime--;document.getElementById('sp-timer').textContent=spTime;if(spTime<=3)document.getElementById('sp-timer').classList.add('urgent');if(spTime<=0){clearInterval(spInterval);spTimeUp();}},1000);
-  document.getElementById('sp-v1').focus();
+  if(spLevel==='hard'){
+    ['sp-v1','sp-v2','sp-v3'].forEach(id=>{const e=document.getElementById(id);e.value='';e.className='speed-input';e.disabled=false;});
+    document.getElementById('sp-v1').focus();
+  } else {
+    const others=shuffle(VERBS.filter(x=>x!==v)).slice(0,3);
+    const choices=shuffle([v.v2,...others.map(o=>o.v2)]);
+    const el=document.getElementById('sp-choices');el.innerHTML='';
+    choices.forEach(c=>{const btn=document.createElement('button');btn.className='fib-choice';btn.style.margin='.3rem';btn.textContent=c;btn.onclick=()=>spChoicePick(btn,c,v);el.appendChild(btn);});
+  }
+}
+function spChoicePick(btn,chosen,v){
+  clearInterval(spInterval);
+  document.getElementById('sp-choices').querySelectorAll('.fib-choice').forEach(b=>b.onclick=null);
+  const ok=chk(chosen,v.v2);btn.className='fib-choice '+(ok?'sel-ok':'sel-bad');
+  if(!ok)document.getElementById('sp-choices').querySelectorAll('.fib-choice').forEach(b=>{if(chk(b.textContent,v.v2))b.className='fib-choice reveal-ok';});
+  if(ok){const fast=spTime>=10;spScore+=fast?2:1;spStreak++;document.getElementById('sp-fb').innerHTML='<span style="color:var(--accent)">'+(fast?'⚡ Fast! +2':'+1 ✓')+'</span>';addScore(fast?2:1);}
+  else{spStreak=0;document.getElementById('sp-fb').innerHTML='<span style="color:var(--err)">✗ '+v.v1+' → '+v.v2+' → '+v.v3+'</span>';}
+  recordResult(v,ok);document.getElementById('sp-score').textContent=spScore;document.getElementById('sp-streak').textContent=spStreak;spIdx++;setTimeout(spNext,1300);
 }
 function spKey(e){if(e.key==='Enter')spCheck();}
 function spCheck(){
+  if(spLevel==='easy')return;
   clearInterval(spInterval);const v=spDeck[spIdx];
   const c1=chk(document.getElementById('sp-v1').value,v.v1),c2=chk(document.getElementById('sp-v2').value,v.v2),c3=chk(document.getElementById('sp-v3').value,v.v3);
   const ok=c1&&c2&&c3;
@@ -892,6 +1056,7 @@ function spGameOver(){
   else document.getElementById('sp-rec').textContent='Best: '+bestSpeed;document.getElementById('sp-best').textContent=bestSpeed;
 }
 
+
 // ── SORTING ────────────────────────────────────────────
 const PATS=['AAA','ABB','ABC','ABA'];
 const PAT_CHECK={AAA:v=>v.v1===v.v2&&v.v2===v.v3,ABB:v=>v.v1!==v.v2&&v.v2===v.v3,ABC:v=>v.v1!==v.v2&&v.v2!==v.v3&&v.v1!==v.v3,ABA:v=>v.v1!==v.v2&&v.v1===v.v3};
@@ -901,7 +1066,7 @@ function init_sorting(){
   PATS.forEach(p=>{document.getElementById('placed-'+p).innerHTML='';document.getElementById('bucket-'+p).classList.remove('drag-over');});
   document.getElementById('sort-result').className='hidden mt2 center';document.getElementById('sort-placed').textContent='0';document.getElementById('sort-correct').textContent='0';document.getElementById('sort-pct').textContent='—';
   const pool=buildDeck();const poolEl=document.getElementById('sort-pool');poolEl.innerHTML='';
-  pool.forEach(v=>{const chip=document.createElement('div');chip.className='sort-chip';chip.textContent=v.v1;chip.draggable=true;chip.dataset.verb=v.v1;chip.addEventListener('dragstart',e=>e.dataTransfer.setData('text',v.v1));poolEl.appendChild(chip);});
+  pool.forEach(v=>{const chip=document.createElement('div');chip.className='sort-chip';chip.textContent=easyMode?v.v1+' / '+v.v2+' / '+v.v3:v.v1;chip.draggable=true;chip.dataset.verb=v.v1;chip.title=v.v1+' / '+v.v2+' / '+v.v3;chip.addEventListener('dragstart',e=>e.dataTransfer.setData('text',v.v1));poolEl.appendChild(chip);});
 }
 function sortDrop(e,pat){
   e.preventDefault();document.getElementById('bucket-'+pat).classList.remove('drag-over');const vn=e.dataTransfer.getData('text');
@@ -910,6 +1075,16 @@ function sortDrop(e,pat){
   const bc=document.createElement('span');bc.className='bucket-chip';bc.textContent=vn;bc.dataset.verb=vn;bc.dataset.pat=pat;
   bc.onclick=()=>{placedMap[pat]=placedMap[pat].filter(x=>x!==vn);bc.remove();chip.classList.remove('placed');document.getElementById('sort-placed').textContent=PATS.reduce((a,p)=>a+placedMap[p].length,0);};
   document.getElementById('placed-'+pat).appendChild(bc);document.getElementById('sort-placed').textContent=PATS.reduce((a,p)=>a+placedMap[p].length,0);
+}
+function sortToggleHints(btn){
+  const chips=document.querySelectorAll('#sort-pool .sort-chip');
+  const show=btn.dataset.showing!=='1';
+  chips.forEach(chip=>{
+    const v=VERBS.find(x=>x.v1===chip.dataset.verb);
+    if(v) chip.textContent=show?v.v1+' / '+v.v2+' / '+v.v3:v.v1;
+  });
+  btn.dataset.showing=show?'1':'0';
+  btn.textContent=show?'🙈 Hide forms':'💬 Show all forms';
 }
 function sortCheck(){
   let tot=0,cor=0;PATS.forEach(pat=>{document.getElementById('placed-'+pat).querySelectorAll('.bucket-chip').forEach(bc=>{tot++;const v=VERBS.find(x=>x.v1===bc.dataset.verb);const ok=v&&PAT_CHECK[pat](v);bc.className='bucket-chip '+(ok?'ok':'bad');if(ok)cor++;if(v)recordResult(v,ok);});});
@@ -927,17 +1102,25 @@ function liRender(){
   document.getElementById('li-feedback').className='hidden';document.getElementById('li-ex-wrap').className='tf-example hidden';
   document.getElementById('li-check-btn').classList.remove('hidden');document.getElementById('li-next-btn').classList.add('hidden');
   document.getElementById('li-play-btn').classList.remove('playing');document.getElementById('li-count').textContent='Press play to listen';
+  const liEasyHint=document.getElementById('li-easy-hint');
+  if(liEasyHint){const veh=liDeck[liIdx];liEasyHint.textContent=easyMode?'Hint: '+veh.ru:'';liEasyHint.style.display=easyMode?'block':'none';}
+  const liV2row=document.getElementById('li-v2-row'),liV3row=document.getElementById('li-v3-row');
+  if(liV2row)liV2row.style.display=easyMode?'none':'';
+  if(liV3row)liV3row.style.display=easyMode?'none':'';
   setBadge('li-adapt-badge',liDeck[liIdx]);
   document.getElementById('li-progress').textContent=(liIdx+1)+'/'+SESSION;document.getElementById('li-bar').style.width=(liIdx/SESSION*100)+'%';
   renderDots('li-dots',liDeck,liIdx,liResults);
 }
-function liPlay(){const v=liDeck[liIdx];liPlays++;document.getElementById('li-count').textContent='Played '+liPlays+'×';const btn=document.getElementById('li-play-btn');btn.classList.add('playing');window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(v.v1);u.lang='en-GB';u.rate=0.85;u.onend=()=>btn.classList.remove('playing');window.speechSynthesis.speak(u);document.getElementById('li-v1').focus();}
+function liPlay(){const v=liDeck[liIdx];liPlays++;document.getElementById('li-count').textContent='Played '+liPlays+'×';const btn=document.getElementById('li-play-btn');btn.classList.add('playing');window.speechSynthesis.cancel();const u=new SpeechSynthesisUtterance(v.v1);u.lang='en-GB';u.rate=easyMode?0.65:0.85;u.onend=()=>btn.classList.remove('playing');window.speechSynthesis.speak(u);document.getElementById('li-v1').focus();}
 function liKey(e){if(e.key==='Enter')liChecked?liNext():liCheck();}
 function liCheck(){
   if(!liPlays){alert('Listen first!');return;}const v=liDeck[liIdx];
-  const c1=chk(document.getElementById('li-v1').value,v.v1),c2=chk(document.getElementById('li-v2').value,v.v2),c3=chk(document.getElementById('li-v3').value,v.v3);const ok=c1&&c2&&c3;
-  ['li-v1','li-v2','li-v3'].forEach((id,i)=>{const e=document.getElementById(id);e.className='listen-input '+([c1,c2,c3][i]?'correct':'wrong');e.disabled=true;if(![c1,c2,c3][i])e.value=[v.v1,v.v2,v.v3][i];});
-  const fb=document.getElementById('li-feedback');fb.className='feedback '+(ok?'ok':'bad');fb.textContent=ok?'Perfect! ✓':'Correct: '+v.v1+' → '+v.v2+' → '+v.v3;
+  const c1=chk(document.getElementById('li-v1').value,v.v1);
+  const c2=easyMode?true:chk(document.getElementById('li-v2').value,v.v2);
+  const c3=easyMode?true:chk(document.getElementById('li-v3').value,v.v3);
+  const ok=c1&&c2&&c3;
+  ['li-v1','li-v2','li-v3'].forEach((id,i)=>{const e=document.getElementById(id);if(easyMode&&i>0)return;e.className='listen-input '+([c1,c2,c3][i]?'correct':'wrong');e.disabled=true;if(![c1,c2,c3][i])e.value=[v.v1,v.v2,v.v3][i];});
+  const fb=document.getElementById('li-feedback');fb.className='feedback '+(ok?'ok':'bad');fb.textContent=ok?'Correct! ✓ '+v.v1+' → '+v.v2+' → '+v.v3:'Correct: '+v.v1+' → '+v.v2+' → '+v.v3;
   document.getElementById('li-ex').innerHTML=v.ex[0].replace(/\{(\w+)\}/g,'<b>$1</b>');document.getElementById('li-ex-wrap').className='tf-example';
   document.getElementById('li-check-btn').classList.add('hidden');document.getElementById('li-next-btn').classList.remove('hidden');
   recordResult(v,ok);liResults.push(ok);if(ok){liCorrect++;addScore(1);}liIdx++;liChecked=true;
@@ -1525,6 +1708,7 @@ function prRenderGap(ex){
           const pill=document.createElement('span');pill.className='gap-pill';pill.textContent=ch;pill.dataset.correct=ch===answer?'1':'0';pill.dataset.answer=answer;
           pill.onclick=()=>gapPillClick(pill,row,answer);row.appendChild(pill);
         });
+        if(easyMode){const gh=document.createElement('span');gh.style.cssText='font-size:10px;color:var(--hint);display:block;margin-bottom:2px';gh.textContent='['+inf+']';wrap.insertBefore(gh,row);}
         wrap.appendChild(row);p.appendChild(wrap);
       } else if(part){p.appendChild(document.createTextNode(part));}
     });
@@ -1567,6 +1751,16 @@ function prRenderDialogue(ex){
         span.dataset.correct=correct;
         span.onclick=()=>{
           if(span.classList.contains('fixed'))return;
+          if(easyMode){
+            const others=shuffle(VERBS.filter(x=>x.v2!==correct&&x.v1!==correct)).slice(0,3).map(x=>x.v2);
+            const allChoices=shuffle([correct,...others]);
+            const pill_wrap=document.createElement('span');pill_wrap.style.cssText='display:inline-flex;gap:4px;flex-wrap:wrap;vertical-align:middle;margin-left:4px';
+            allChoices.forEach(ch=>{const pp=document.createElement('button');pp.style.cssText='font-size:12px;padding:2px 9px;border-radius:12px;border:1.5px solid var(--border);cursor:pointer;background:var(--card);font-family:var(--sans);font-weight:600';pp.textContent=ch;
+              pp.onclick=()=>{const ok=ch.toLowerCase()===correct.toLowerCase();span.textContent=ok?correct:ch;span.className='dl-error '+(ok?'fixed':'bad');pill_wrap.remove();if(ok){fixed++;addScore(1);const v2=VERBS.find(x=>x.v2===correct||x.v3===correct||x.v1===correct);if(v2)recordResult(v2,true);if(fixed===total)prShowResult(fixed,total,'dialogue');}else{setTimeout(()=>{span.textContent=wrong;span.className='dl-error';},1200);}};
+              pill_wrap.appendChild(pp);});
+            span.textContent='';span.appendChild(pill_wrap);
+            return;
+          }
           const inp=document.createElement('input');
           inp.type='text';inp.placeholder='correct form…';
           inp.style.cssText='font-family:var(--mono);font-size:14px;font-weight:600;border:none;border-bottom:2px solid var(--accent);outline:none;background:transparent;width:110px;color:var(--text);padding:1px 4px';
@@ -1659,16 +1853,29 @@ function prRenderTranslate(ex){
     const num=document.createElement('div');num.style.cssText='font-size:11px;font-weight:700;color:var(--hint);margin-bottom:.4rem;text-transform:uppercase;letter-spacing:.5px';num.textContent=(i+1)+'. '+item.verb+' \xb7 '+item.tense;card.appendChild(num);
     const ru=document.createElement('div');ru.className='tr-ru-sentence';ru.textContent=item.ru;card.appendChild(ru);
     const hint=document.createElement('div');hint.className='tr-hint';hint.textContent='Hint: '+item.hint;card.appendChild(hint);
-    const inp=document.createElement('textarea');inp.className='tr-input';inp.rows=2;inp.placeholder='Type the English sentence here\u2026';inp.id='tr-inp-'+i;card.appendChild(inp);
-    const ans=document.createElement('div');ans.className='tr-answer';ans.id='tr-ans-'+i;ans.innerHTML='<b>Model answer:</b> '+item.en_answer;card.appendChild(ans);
-    const btn=document.createElement('button');btn.className='btn-check';btn.style.cssText='margin-top:.6rem;font-size:12px;padding:7px 18px';btn.textContent='Check';
-    btn.onclick=()=>{
-      const val=inp.value.trim().toLowerCase();const ok=val.includes(item.key_form.toLowerCase())&&val.length>8;
-      inp.className='tr-input '+(ok?'ok':'bad');ans.style.display='block';btn.disabled=true;
-      const v=VERBS.find(x=>x.v1===item.verb);if(v)recordResult(v,ok);if(ok)addScore(2);
-      checked++;if(checked===total){const okCount=ex.items.filter((_,j)=>document.getElementById('tr-inp-'+j).classList.contains('ok')).length;prShowResult(okCount,total,'translate');}
-    };
-    card.appendChild(btn);c.appendChild(card);
+    if(easyMode){
+      const trChoices=document.createElement('div');trChoices.style.cssText='display:flex;flex-direction:column;gap:.5rem;margin-top:.6rem';
+      const wrongOpts=PR_TRANSLATE.flatMap(s=>s.items).filter(x=>x.en_answer!==item.en_answer).slice(0,2).map(x=>x.en_answer);
+      const allOpts=shuffle([item.en_answer,...wrongOpts]);
+      let trAnswered=false;
+      allOpts.forEach(opt=>{
+        const ob=document.createElement('div');ob.style.cssText='padding:.6rem .85rem;border:1.5px solid var(--border);border-radius:10px;cursor:pointer;font-size:13px;line-height:1.5;transition:.15s;background:var(--card)';ob.textContent=opt;
+        ob.onclick=()=>{if(trAnswered)return;trAnswered=true;const ok=opt===item.en_answer;ob.style.background=ok?'var(--accent-l)':'var(--err-l)';ob.style.borderColor=ok?'var(--accent)':'var(--err)';ob.style.color=ok?'var(--accent-d)':'var(--err)';if(!ok){trChoices.querySelectorAll('div').forEach(b=>{if(b.textContent===item.en_answer){b.style.background='var(--accent-l)';b.style.borderColor='var(--accent)';}});}const vx=VERBS.find(x=>x.v1===item.verb);if(vx)recordResult(vx,ok);if(ok)addScore(2);checked++;if(checked===total){const okCount=document.querySelectorAll('.tr-ok-easy').length;prShowResult(okCount,total,'translate');}ob.classList.add(ok?'tr-ok-easy':'tr-bad-easy');};
+        trChoices.appendChild(ob);
+      });
+      card.appendChild(trChoices);
+    } else {
+      const inp=document.createElement('textarea');inp.className='tr-input';inp.rows=2;inp.placeholder='Type the English sentence here\u2026';inp.id='tr-inp-'+i;card.appendChild(inp);
+      const ans=document.createElement('div');ans.className='tr-answer';ans.id='tr-ans-'+i;ans.innerHTML='<b>Model answer:</b> '+item.en_answer;card.appendChild(ans);
+      const btn=document.createElement('button');btn.className='btn-check';btn.style.cssText='margin-top:.6rem;font-size:12px;padding:7px 18px';btn.textContent='Check';
+      btn.onclick=()=>{
+        const val=inp.value.trim().toLowerCase();const ok=val.includes(item.key_form.toLowerCase())&&val.length>8;
+        inp.className='tr-input '+(ok?'ok':'bad');ans.style.display='block';btn.disabled=true;
+        const vx=VERBS.find(x=>x.v1===item.verb);if(vx)recordResult(vx,ok);if(ok)addScore(2);
+        checked++;if(checked===total){const okCount=ex.items.filter((_,j)=>document.getElementById('tr-inp-'+j).classList.contains('ok')).length;prShowResult(okCount,total,'translate');}
+      };
+      card.appendChild(btn);
+    }c.appendChild(card);
   });
 }
 
@@ -1681,6 +1888,7 @@ function prRenderChooser(ex){
     const block=document.createElement('div');block.style.marginBottom='1.5rem';
     const vb=document.createElement('div');vb.className='ch-verb-big';vb.textContent='to '+item.verb;block.appendChild(vb);
     const vr=document.createElement('div');vr.className='ch-verb-ru';vr.textContent=item.ru;block.appendChild(vr);
+    if(easyMode){const fv=VERBS.find(x=>x.v1===item.verb);if(fv){const fh=document.createElement('div');fh.className='easy-hint';fh.textContent=fv.v1+' → '+fv.v2+' → '+fv.v3;block.appendChild(fh);}}
     const opts=document.createElement('div');opts.className='pr-chooser';
     const shuffledOpts=shuffle([...item.options]);
     shuffledOpts.forEach((opt,oi)=>{
@@ -1716,7 +1924,8 @@ function prRenderDetective(ex){
       if(em){
         const[,correct,wrong]=em;
         const span=document.createElement('span');span.className='dt-span';span.textContent=wrong;span.dataset.correct=correct;span.dataset.isError='1';span.dataset.clicked='0';
-        span.onclick=()=>{span.dataset.clicked=span.dataset.clicked==='1'?'0':'1';span.className='dt-span'+(span.dataset.clicked==='1'?' flagged':'');};
+        span.onclick=()=>{span.dataset.clicked=span.dataset.clicked==='1'?'0':'1';span.className='dt-span'+(span.dataset.clicked==='1'?' flagged':(easyMode?' dt-pre-highlight':''));};
+        if(easyMode){span.className='dt-span dt-pre-highlight';}
         dtErrorSpans.push(span);p.appendChild(span);
       } else if(ok){
         // correct verb form — make it clickable as a distractor
@@ -1778,7 +1987,7 @@ function prShowResult(score,total,type){
   box.scrollIntoView({behavior:'smooth',block:'nearest'});
 }
 
-loadScores();
+loadScores();applyEasyToggleUI();
 
 </script>
 </body>
